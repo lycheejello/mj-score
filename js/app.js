@@ -291,7 +291,12 @@ function onMeldSlotClick(meldIndex) {
   if (isSlotFull(meldIndex)) return;
 
   state.melds[meldIndex].tiles.push(state.selectedPaletteTile);
-  state.selectedPaletteTile = null;
+
+  // Deselect only if all 4 copies of this tile are now placed
+  const used = getUsedCounts();
+  if ((used[state.selectedPaletteTile] || 0) >= 4) {
+    state.selectedPaletteTile = null;
+  }
 
   updateMeldType(meldIndex);
   renderMeldSlot(meldIndex);
