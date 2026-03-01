@@ -531,8 +531,38 @@ header h1 {
 }
 .results-tiles {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.preview-section-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.5);
+}
+.preview-winning-section .preview-section-label {
+  color: var(--gold);
+}
+.preview-melds-row {
+  display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
+  align-items: flex-start;
+}
+.preview-meld-group {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 4px;
 }
 
 .results-table-wrap {

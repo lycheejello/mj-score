@@ -430,17 +430,7 @@ function calculateAndShow() {
   document.getElementById('total-fan').textContent = total;
 
   // Hand preview
-  const preview = document.getElementById('results-hand-tiles');
-  preview.innerHTML = '';
-  for (const id of state.melds.flatMap(m => m.tiles)) {
-    const t = TILE_BY_ID[id];
-    if (!t) continue;
-    const chip = document.createElement('div');
-    chip.className = `tile-chip suit-${t.suit}`;
-    chip.style.cursor = 'default';
-    chip.innerHTML = `<span class="chip-face">${t.face}</span><span class="chip-label">${t.label}</span>`;
-    preview.appendChild(chip);
-  }
+  renderResultsPreview();
 
   // Breakdown table
   const tbody = document.getElementById('results-tbody');
@@ -460,6 +450,232 @@ function calculateAndShow() {
   }
 
   showScreen('screen-results');
+}
+
+// ── Dev Presets ───────────────────────────────────────────────────────────────
+
+const PRESETS = [
+  {
+    label: '清一色 All-bamboo',
+    melds: [
+      { tiles: ['b1','b2','b3'], concealed: true  },
+      { tiles: ['b4','b5','b6'], concealed: true  },
+      { tiles: ['b7','b8','b9'], concealed: true  },
+      { tiles: ['b1','b1','b1'], concealed: true  },
+      { tiles: ['b7','b7','b7'], concealed: true  },
+      { tiles: ['b4','b4'],      concealed: true  },
+    ],
+    winningTile: '2-2',   // b9 in meld 3
+    wonFrom: 'self',
+    flowers: [],
+  },
+  {
+    label: '大三元 Three dragons',
+    melds: [
+      { tiles: ['z5','z5','z5'], concealed: true  },   // 中
+      { tiles: ['z6','z6','z6'], concealed: false },   // 發
+      { tiles: ['z7','z7','z7'], concealed: false },   // 白
+      { tiles: ['z1','z1','z1'], concealed: false },   // 東
+      { tiles: ['z2','z2','z2'], concealed: true  },   // 南
+      { tiles: ['z3','z3'],      concealed: true  },   // 西 pair
+    ],
+    winningTile: '0-2',   // last 中 in meld 1
+    wonFrom: 'self',
+    flowers: [],
+  },
+  {
+    label: '一條龍 Full run',
+    melds: [
+      { tiles: ['m1','m2','m3'], concealed: true },
+      { tiles: ['m4','m5','m6'], concealed: true },
+      { tiles: ['m7','m8','m9'], concealed: true },
+      { tiles: ['b1','b2','b3'], concealed: true },
+      { tiles: ['b7','b8','b9'], concealed: true },
+      { tiles: ['m5','m5'],      concealed: true },
+    ],
+    winningTile: '5-1',   // second m5 in pair
+    wonFrom: 'self',
+    flowers: [],
+  },
+  {
+    label: '基本 Basic win (~3 fan)',
+    melds: [
+      { tiles: ['m2','m3','m4'], concealed: false },
+      { tiles: ['p6','p7','p8'], concealed: false },
+      { tiles: ['z1','z1','z1'], concealed: false },   // 東 exposed pung
+      { tiles: ['m6','m7','m8'], concealed: true  },
+      { tiles: ['p2','p3','p4'], concealed: true  },
+      { tiles: ['b5','b5'],      concealed: true  },   // pair of 5 → pair_258
+    ],
+    winningTile: '5-1',   // second b5 in pair
+    wonFrom: 'z2',
+    flowers: [],
+  },
+  {
+    label: '小平 Xiao Ping + flower (~9 fan)',
+    melds: [
+      { tiles: ['m2','m3','m4'], concealed: true },
+      { tiles: ['p5','p6','p7'], concealed: true },
+      { tiles: ['b3','b4','b5'], concealed: true },
+      { tiles: ['m6','m7','m8'], concealed: true },
+      { tiles: ['p2','p3','p4'], concealed: true },
+      { tiles: ['m5','m5'],      concealed: true },   // pair of 5 → pair_258
+    ],
+    winningTile: '5-1',   // second m5 in pair
+    wonFrom: 'self',
+    flowers: ['f1'],
+  },
+];
+
+let _presetIndex = 0;
+
+function loadPreset() {
+  const preset = PRESETS[_presetIndex % PRESETS.length];
+  _presetIndex++;
+
+  state.selectedPaletteTile = null;
+  state.winningTile = preset.winningTile;
+  state.selectedFlowers = new Set(preset.flowers);
+  state.conditions.wonFrom = preset.wonFrom;
+  state.conditions.flowerCount = preset.flowers.length;
+
+  state.melds = preset.melds.map((m, i) => ({
+    tiles: [...m.tiles],
+    type: i === 5 ? 'pair' : (detectMeldType([...m.tiles]) || 'sequence'),
+    concealed: m.concealed,
+  }));
+
+  buildMeldSlots();
+  for (let i = 0; i < 6; i++) {
+    renderMeldSlot(i);
+    updateMeldType(i);
+    const toggle = document.querySelector(`.concealed-toggle[data-meld="${i}"]`);
+    if (toggle) {
+      toggle.textContent = state.melds[i].concealed ? '🙈' : '👁';
+      toggle.classList.toggle('is-concealed', state.melds[i].concealed);
+    }
+  }
+
+  document.querySelectorAll('.won-from-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.value === preset.wonFrom)
+  );
+  document.querySelector('.won-from-bar').classList.remove('missing');
+
+  renderFlowerPalette();
+  state.selectedFlowers.forEach(fid => {
+    const btn = document.querySelector(`#palette-flower .tile-btn[data-id="${fid}"]`);
+    if (btn) btn.classList.add('selected-palette');
+  });
+  updateFlowerBadge();
+  document.getElementById('cond-flowers').value = preset.flowers.length;
+  document.getElementById('flower-special-row').style.display = preset.flowers.length >= 6 ? '' : 'none';
+
+  updatePaletteUI();
+  updateSelectionHint();
+  updateMeldDropTargets();
+}
+
+function renderResultsPreview() {
+  const container = document.getElementById('results-hand-tiles');
+  container.innerHTML = '';
+
+  const wonFromLabels = { self: '自摸', z1: '東', z2: '南', z3: '西', z4: '北' };
+  const [wtMeldIdx, wtTileIdx] = state.winningTile
+    ? state.winningTile.split('-').map(Number)
+    : [null, null];
+
+  function makeChip(tileId, isWinning = false) {
+    const tile = TILE_BY_ID[tileId] || FLOWER_TILES.find(t => t.id === tileId);
+    if (!tile) return null;
+    const chip = document.createElement('div');
+    chip.className = `tile-chip suit-${tile.suit}${isWinning ? ' is-winning' : ''}`;
+    chip.innerHTML = `
+      <span class="chip-face">${tile.face}</span>
+      <span class="chip-label">${tile.label}</span>
+      ${isWinning ? '<span class="win-star">★</span>' : ''}
+    `;
+    return chip;
+  }
+
+  function makeSection(labelText, meldEntries, extraClass = '') {
+    if (meldEntries.length === 0) return null;
+    const section = document.createElement('div');
+    section.className = `preview-section${extraClass ? ' ' + extraClass : ''}`;
+    const lbl = document.createElement('div');
+    lbl.className = 'preview-section-label';
+    lbl.textContent = labelText;
+    section.appendChild(lbl);
+    const row = document.createElement('div');
+    row.className = 'preview-melds-row';
+    for (const { meldIndex, meld } of meldEntries) {
+      const group = document.createElement('div');
+      group.className = 'preview-meld-group';
+      for (let ti = 0; ti < meld.tiles.length; ti++) {
+        const isWinning = meldIndex === wtMeldIdx && ti === wtTileIdx;
+        const chip = makeChip(meld.tiles[ti], isWinning);
+        if (chip) group.appendChild(chip);
+      }
+      row.appendChild(group);
+    }
+    section.appendChild(row);
+    return section;
+  }
+
+  // Separate exposed and concealed melds (indices 0–4)
+  const exposedMelds = [];
+  const concealedMelds = [];
+  for (let i = 0; i < 5; i++) {
+    const meld = state.melds[i];
+    if (meld.tiles.length === 0) continue;
+    (meld.concealed ? concealedMelds : exposedMelds).push({ meldIndex: i, meld });
+  }
+  // Pair always in concealed section
+  if (state.melds[5].tiles.length > 0) {
+    concealedMelds.push({ meldIndex: 5, meld: state.melds[5] });
+  }
+
+  const expSec = makeSection('明 Exposed', exposedMelds);
+  const conSec = makeSection('暗 Concealed', concealedMelds);
+  if (expSec) container.appendChild(expSec);
+  if (conSec) container.appendChild(conSec);
+
+  // Winning tile section
+  if (wtMeldIdx !== null) {
+    const meld = state.melds[wtMeldIdx];
+    const tileId = meld?.tiles[wtTileIdx];
+    if (tileId) {
+      const section = document.createElement('div');
+      section.className = 'preview-section preview-winning-section';
+      const lbl = document.createElement('div');
+      lbl.className = 'preview-section-label';
+      lbl.textContent = `★ Winning tile — ${wonFromLabels[state.conditions.wonFrom] || ''}`;
+      section.appendChild(lbl);
+      const row = document.createElement('div');
+      row.className = 'preview-melds-row';
+      const chip = makeChip(tileId, true);
+      if (chip) row.appendChild(chip);
+      section.appendChild(row);
+      container.appendChild(section);
+    }
+  }
+
+  // Flowers section
+  if (state.selectedFlowers.size > 0) {
+    const section = document.createElement('div');
+    section.className = 'preview-section';
+    const lbl = document.createElement('div');
+    lbl.className = 'preview-section-label';
+    lbl.textContent = `花 Flowers (${state.selectedFlowers.size})`;
+    section.appendChild(lbl);
+    const row = document.createElement('div');
+    row.className = 'preview-melds-row';
+    for (const fid of state.selectedFlowers) {
+      const chip = makeChip(fid);
+      if (chip) row.appendChild(chip);
+    }
+    section.appendChild(row);
+    container.appendChild(section);
+  }
 }
 
 function clearAll() {
@@ -494,6 +710,7 @@ function clearAll() {
 function bindEvents() {
   document.getElementById('calc-btn').addEventListener('click', calculateAndShow);
   document.getElementById('clear-btn').addEventListener('click', clearAll);
+  document.getElementById('sample-btn').addEventListener('click', loadPreset);
 
   // Results screen
   document.getElementById('back-btn').addEventListener('click', () => showScreen('screen-main'));
