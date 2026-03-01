@@ -56,6 +56,11 @@ header h1 {
   white-space: nowrap;
   flex: 1;
 }
+.version-label {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
 .step-indicator {
   font-size: 0.8rem;
   color: rgba(255,255,255,0.7);
