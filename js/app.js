@@ -78,11 +78,9 @@ function clearMeldWildSubs(meldIndex) {
 
 // Count wildcard tiles (z7 + wild tile) and sync to conditions panel
 function updateWildcardCount() {
-  const count = state.melds.reduce((n, m) => {
-    return n + m.tiles.filter(id =>
-      id === 'z7' || (state.wildTileId && id === state.wildTileId)
-    ).length;
-  }, 0);
+  const count = state.wildTileId
+    ? state.melds.reduce((n, m) => n + m.tiles.filter(id => id === state.wildTileId).length, 0)
+    : 0;
   state.conditions.wildcards = count;
   document.getElementById('cond-wildcards').value = count;
   document.getElementById('mo-bao-row').style.display     = count > 0 ? '' : 'none';
