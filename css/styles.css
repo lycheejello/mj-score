@@ -253,16 +253,16 @@ header h1 {
   font-size: 0.85rem;
   padding: 1px 4px;
   border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.12);
+  color: #fff;        /* full color for exposed 👁 */
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
 }
 .concealed-toggle.is-concealed {
   background: rgba(212,168,51,0.2);
-  color: var(--gold);
   border-color: var(--gold);
+  opacity: 0.65;      /* dim the 🙈 to show it's hidden */
 }
 
 .meld-tiles {
@@ -316,6 +316,22 @@ header h1 {
 .tile-chip.suit-p .chip-face { color: #0a3d6b; }
 .tile-chip.suit-z .chip-face { color: #4a2080; }
 .tile-chip.suit-f .chip-face { color: #7b6000; }
+
+/* Winning tile */
+.tile-chip.is-winning {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold);
+  cursor: pointer;
+}
+.win-star {
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  color: var(--gold);
+  line-height: 1;
+}
 
 /* ── Win Conditions (collapsible) ────────────────────────── */
 .conditions-details {

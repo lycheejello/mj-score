@@ -12,6 +12,8 @@ const state = {
   ],
 
   selectedPaletteTile: null,  // tile id currently selected from palette
+  winningTile: null,          // 'meldIndex-tileIndex' of the winning tile
+  selectedFlowers: new Set(), // flower tile ids currently toggled on
 
   conditions: {
     dealer: false,
@@ -156,30 +158,34 @@ function makePaletteBtn(tile) {
 function renderFlowerPalette() {
   const el = document.getElementById('palette-flower');
   el.innerHTML = '';
-  // Single flower button that increments the count
   for (const tile of FLOWER_TILES) {
     const btn = document.createElement('button');
     btn.className = `tile-btn suit-${tile.suit}`;
     btn.dataset.id = tile.id;
     btn.innerHTML = `<span class="tile-face">${tile.face}</span>`;
-    btn.addEventListener('click', () => onFlowerClick());
+    btn.addEventListener('click', () => onFlowerClick(tile.id, btn));
     el.appendChild(btn);
   }
 }
 
-function onFlowerClick() {
-  const current = state.conditions.flowerCount;
-  if (current >= 8) return;
-  state.conditions.flowerCount = current + 1;
-  document.getElementById('cond-flowers').value = state.conditions.flowerCount;
+function onFlowerClick(id, btn) {
+  if (state.selectedFlowers.has(id)) {
+    state.selectedFlowers.delete(id);
+    btn.classList.remove('selected-palette');
+  } else {
+    state.selectedFlowers.add(id);
+    btn.classList.add('selected-palette');
+  }
+  const n = state.selectedFlowers.size;
+  state.conditions.flowerCount = n;
+  document.getElementById('cond-flowers').value = n;
   updateFlowerBadge();
-  const row = document.getElementById('flower-special-row');
-  row.style.display = state.conditions.flowerCount >= 6 ? '' : 'none';
+  document.getElementById('flower-special-row').style.display = n >= 6 ? '' : 'none';
 }
 
 function updateFlowerBadge() {
   const badge = document.getElementById('flower-count-badge');
-  const n = state.conditions.flowerCount;
+  const n = state.selectedFlowers.size;
   if (n > 0) {
     badge.textContent = `${n} 花`;
     badge.style.display = '';
@@ -326,15 +332,30 @@ function renderMeldSlot(meldIndex) {
   for (let i = 0; i < meld.tiles.length; i++) {
     const tileId = meld.tiles[i];
     const tile = TILE_BY_ID[tileId];
+    const key = `${meldIndex}-${i}`;
+    const isWinning = state.winningTile === key;
+
     const chip = document.createElement('div');
-    chip.className = `tile-chip suit-${tile.suit}`;
-    chip.innerHTML = `<span class="chip-face">${tile.face}</span><span class="chip-label">${tile.label}</span>`;
+    chip.className = `tile-chip suit-${tile.suit}${isWinning ? ' is-winning' : ''}`;
+    chip.innerHTML = `
+      <span class="chip-face">${tile.face}</span>
+      <span class="chip-label">${tile.label}</span>
+      ${isWinning ? '<span class="win-star">★</span>' : ''}
+    `;
+
+    // Tap chip to mark/unmark as winning tile
+    chip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.winningTile = (state.winningTile === key) ? null : key;
+      for (let mi = 0; mi < 6; mi++) renderMeldSlot(mi);
+    });
 
     const rm = document.createElement('button');
     rm.className = 'chip-remove';
     rm.textContent = '×';
     rm.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (state.winningTile === key) state.winningTile = null;
       meld.tiles.splice(i, 1);
       updateMeldType(meldIndex);
       renderMeldSlot(meldIndex);
@@ -423,8 +444,11 @@ function clearAll() {
     { tiles: [], type: 'pair',     concealed: true }
   ];
   state.selectedPaletteTile = null;
+  state.winningTile = null;
+  state.selectedFlowers = new Set();
   state.conditions.flowerCount = 0;
   document.getElementById('cond-flowers').value = 0;
+  renderFlowerPalette();
   updateFlowerBadge();
   document.getElementById('flower-special-row').style.display = 'none';
 
