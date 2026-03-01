@@ -375,11 +375,12 @@ function calculateAndShow() {
     alert('The pair slot needs exactly 2 tiles.');
     return;
   }
-  // Validate all non-pair melds that have any tiles are complete
+  // Validate all non-pair melds that have tiles form a valid type
   for (let i = 0; i < 5; i++) {
     const m = state.melds[i];
-    if (m.tiles.length > 0 && m.tiles.length < maxForSlot(i)) {
-      alert(`Meld ${i + 1} is incomplete (${m.tiles.length} / ${maxForSlot(i)} tiles).`);
+    if (m.tiles.length === 0) continue;
+    if (detectMeldType(m.tiles) === null) {
+      alert(`Meld ${i + 1} is incomplete or invalid (${m.tiles.length} tile${m.tiles.length !== 1 ? 's' : ''}).`);
       return;
     }
   }
