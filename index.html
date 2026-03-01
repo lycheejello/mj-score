@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a6b3c">
+  <title>Mahjong Scorer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ STEP 1: TILE PICKER -->
+<div id="screen-1" class="screen active">
+  <header>
+    <h1>🀄 Mahjong Scorer</h1>
+    <div class="step-indicator">Step 1 of 3 — Pick Tiles</div>
+  </header>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-track">
+      <div id="progress-bar" class="progress-bar-fill" style="width:0%"></div>
+    </div>
+    <div id="progress-label" class="progress-label">0 / 17 tiles</div>
+  </div>
+
+  <div class="palette-section">
+    <div class="suit-label">Bamboo 竹</div>
+    <div class="tile-grid" id="palette-bamboo"></div>
+
+    <div class="suit-label">Characters 萬</div>
+    <div class="tile-grid" id="palette-man"></div>
+
+    <div class="suit-label">Circles 餅</div>
+    <div class="tile-grid" id="palette-pin"></div>
+
+    <div class="suit-label">Winds &amp; Dragons 字</div>
+    <div class="tile-grid" id="palette-honor"></div>
+
+    <div class="suit-label">Flowers 花 <span class="note">(don't count toward 17)</span></div>
+    <div class="tile-grid" id="palette-flower"></div>
+  </div>
+
+  <div class="hand-tray-section">
+    <div class="tray-header">
+      <span>Your Hand</span>
+      <button id="clear-hand-btn" class="btn-ghost">✕ Clear</button>
+    </div>
+    <div id="hand-tray" class="hand-tray"></div>
+    <div id="flower-tray-label" class="flower-tray-label" style="display:none">Flowers:</div>
+    <div id="flower-tray" class="hand-tray flower-tray"></div>
+  </div>
+
+  <div class="step-footer">
+    <button id="to-step2-btn" class="btn-primary" disabled>Group Hand →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ STEP 2: HAND GROUPING -->
+<div id="screen-2" class="screen">
+  <header>
+    <button id="back-to-1-btn" class="btn-back">← Back</button>
+    <div class="step-indicator">Step 2 of 3 — Group &amp; Conditions</div>
+  </header>
+
+  <div class="grouping-section">
+    <div class="unassigned-label">Unassigned tiles <span id="unassigned-count" class="badge">0</span></div>
+    <div id="unassigned-tray" class="unassigned-tray"></div>
+
+    <div class="melds-grid" id="melds-grid">
+      <!-- Meld slots injected by JS -->
+    </div>
+  </div>
+
+  <div class="conditions-section">
+    <h2>Win Conditions</h2>
+
+    <div class="condition-row">
+      <label>Dealer 庄家?</label>
+      <label class="toggle"><input type="checkbox" id="cond-dealer"><span class="toggle-slider"></span></label>
+    </div>
+
+    <div class="condition-row" id="streak-row" style="display:none">
+      <label>Consecutive dealer wins 連一拉一</label>
+      <input type="number" id="cond-dealer-streak" class="number-input" min="0" max="20" value="0">
+    </div>
+
+    <div class="condition-row">
+      <label>Self draw 自摸?</label>
+      <label class="toggle"><input type="checkbox" id="cond-zi-mo"><span class="toggle-slider"></span></label>
+    </div>
+
+    <div class="condition-row">
+      <label>All concealed 門清?</label>
+      <label class="toggle"><input type="checkbox" id="cond-men-qing"><span class="toggle-slider"></span></label>
+    </div>
+
+    <div class="condition-row">
+      <label>All tiles exposed 全求?</label>
+      <select id="cond-all-front" class="select-input">
+        <option value="none">No</option>
+        <option value="ban_qiu">半求 — exposed + self draw (+5)</option>
+        <option value="quan_qiu">全求 — exposed + discard win (+10)</option>
+      </select>
+    </div>
+
+    <div class="condition-row">
+      <label>Win type 胡牌方式</label>
+      <select id="cond-win-type" class="select-input">
+        <option value="normal">Normal</option>
+        <option value="yi_du">一獨 — single out (could have had others) (+1)</option>
+        <option value="dui_peng">對碰/洞洞 — pung win (+1)</option>
+        <option value="du_du">獨獨 — closed/middle/pair wait (+2)</option>
+        <option value="qiang_gang">搶槓 — rob the kong (+1)</option>
+        <option value="gang_shang_gang">槓上槓 — win on kong draw (+1)</option>
+      </select>
+    </div>
+
+    <div class="condition-row">
+      <label>Instant win 特殊開局</label>
+      <select id="cond-instant" class="select-input">
+        <option value="none">None</option>
+        <option value="tian_ting">天聽 — dealt tenpai (+20)</option>
+        <option value="tian_hu">天糊 — dealer wins first draw (+30)</option>
+        <option value="di_hu">地糊 — win on dealer's first discard (+40)</option>
+      </select>
+    </div>
+
+    <div class="condition-row">
+      <label>Wildcards used 寶</label>
+      <input type="number" id="cond-wildcards" class="number-input" min="0" max="4" value="0">
+    </div>
+
+    <div class="condition-row" id="mo-bao-row" style="display:none">
+      <label>Win on wild draw 摸寶?</label>
+      <label class="toggle"><input type="checkbox" id="cond-mo-bao"><span class="toggle-slider"></span></label>
+    </div>
+
+    <div class="condition-row" id="bao-gui-wei-row" style="display:none">
+      <label>Wild as original tile 寶歸位?</label>
+      <label class="toggle"><input type="checkbox" id="cond-bao-gui-wei"><span class="toggle-slider"></span></label>
+    </div>
+
+    <div class="condition-row">
+      <label>Flowers 花 count</label>
+      <input type="number" id="cond-flowers" class="number-input" min="0" max="8" value="0">
+    </div>
+
+    <div class="condition-row" id="flower-special-row" style="display:none">
+      <label>Flower special 花特殊</label>
+      <select id="cond-flower-special" class="select-input">
+        <option value="none">None</option>
+        <option value="flower_7steal">七搶一 — steal 7th flower (+40)</option>
+        <option value="flower_8win">八花 — 7–8 flowers win (+40)</option>
+      </select>
+    </div>
+
+    <div class="condition-row">
+      <label>Seven pairs 尼故尼故?</label>
+      <label class="toggle"><input type="checkbox" id="cond-ni-gu"><span class="toggle-slider"></span></label>
+    </div>
+
+    <div class="condition-row">
+      <label>十三幺 Thirteen Orphans?</label>
+      <label class="toggle"><input type="checkbox" id="cond-shi-san-yao"><span class="toggle-slider"></span></label>
+    </div>
+  </div>
+
+  <div class="step-footer">
+    <button id="calc-btn" class="btn-primary">Calculate Score →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ STEP 3: RESULTS -->
+<div id="screen-3" class="screen">
+  <header>
+    <button id="back-to-2-btn" class="btn-back">← Back</button>
+    <div class="step-indicator">Step 3 of 3 — Results</div>
+  </header>
+
+  <div class="results-hero">
+    <div class="total-fan-label">Total Fan 番</div>
+    <div id="total-fan" class="total-fan-value">0</div>
+  </div>
+
+  <div class="results-hand-preview">
+    <div id="results-hand-tiles" class="results-tiles"></div>
+  </div>
+
+  <div class="results-table-wrap">
+    <div class="results-table-header">
+      <span>Score Breakdown</span>
+      <label class="show-zero-label">
+        <input type="checkbox" id="show-zero-rules"> Show all rules
+      </label>
+    </div>
+    <table id="results-table" class="results-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Rule</th>
+          <th class="fan-col">Fan</th>
+        </tr>
+      </thead>
+      <tbody id="results-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="step-footer">
+    <button id="restart-btn" class="btn-primary">↺ Start Over</button>
+  </div>
+</div>
+
+<script src="js/tiles.js"></script>
+<script src="js/csv-parser.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
