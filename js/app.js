@@ -50,9 +50,43 @@ function getTotalTilesPlaced() {
   return state.melds.reduce((sum, m) => sum + m.tiles.length, 0);
 }
 
+// Infer meld type from the tiles placed in a slot.
+// Returns 'sequence' | 'pung' | 'kang' | null (invalid/incomplete)
+function detectMeldType(tiles) {
+  if (tiles.length < 3) return null;
+  const [a, b, c] = tiles;
+  if (tiles.length === 4) return (a === b && b === c && c === tiles[3]) ? 'kang' : null;
+  if (a === b && b === c) return 'pung';
+  const suits = tiles.map(id => TILE_BY_ID[id]?.suit);
+  const vals  = tiles.map(id => TILE_BY_ID[id]?.value).sort((x, y) => x - y);
+  if (suits.every(s => s === suits[0] && s !== 'z') &&
+      vals[1] === vals[0] + 1 && vals[2] === vals[1] + 1) return 'sequence';
+  return null;
+}
+
+// After tiles change, update state.melds[i].type and the badge label
+function updateMeldType(meldIndex) {
+  if (meldIndex === 5) { state.melds[5].type = 'pair'; return; }
+  const meld = state.melds[meldIndex];
+  const detected = detectMeldType(meld.tiles);
+  meld.type = detected || 'sequence';
+
+  const badge = document.querySelector(`.meld-type-badge[data-meld="${meldIndex}"]`);
+  if (!badge) return;
+  const labels = { sequence: '順', pung: '刻', kang: '槓' };
+  badge.textContent = meld.tiles.length >= 3 ? (labels[detected] || '?') : '';
+  badge.dataset.valid = (detected !== null || meld.tiles.length < 3) ? '1' : '0';
+}
+
 function maxForSlot(meldIndex) {
   if (meldIndex === 5) return 2;
-  return state.melds[meldIndex].type === 'kang' ? 4 : 3;
+  // A 3-tile pung can grow to a 4-tile kang; sequences cap at 3
+  const tiles = state.melds[meldIndex].tiles;
+  if (tiles.length === 3) {
+    const [a, b, c] = tiles;
+    return (a === b && b === c) ? 4 : 3;
+  }
+  return 4;
 }
 
 function isSlotFull(meldIndex) {
@@ -221,17 +255,11 @@ function buildMeldSlots() {
     slot.className = `meld-slot${isPair ? ' pair-slot' : ''}`;
     slot.dataset.meldIndex = i;
 
-    const typeOptions = isPair
-      ? '<option value="pair">Pair 對</option>'
-      : `<option value="sequence">Seq 順</option>
-         <option value="pung">Pung 刻</option>
-         <option value="kang">Kang 槓</option>`;
-
     slot.innerHTML = `
       <div class="meld-header">
         <span class="meld-title">${isPair ? 'Pair 對' : `Meld ${i + 1}`}</span>
         <div class="meld-controls">
-          ${isPair ? '' : `<select class="meld-type-select" data-meld="${i}">${typeOptions}</select>`}
+          ${isPair ? '' : `<span class="meld-type-badge" data-meld="${i}"></span>`}
           <button class="concealed-toggle is-concealed" data-meld="${i}">暗</button>
         </div>
       </div>
@@ -246,14 +274,6 @@ function buildMeldSlots() {
       if (e.target.closest('.meld-controls')) return;
       onMeldSlotClick(i);
     });
-
-    if (!isPair) {
-      slot.querySelector('.meld-type-select').addEventListener('change', (e) => {
-        state.melds[i].type = e.target.value;
-        renderMeldSlot(i);
-        updateMeldDropTargets();
-      });
-    }
 
     slot.querySelector('.concealed-toggle').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -273,6 +293,7 @@ function onMeldSlotClick(meldIndex) {
   state.melds[meldIndex].tiles.push(state.selectedPaletteTile);
   state.selectedPaletteTile = null;
 
+  updateMeldType(meldIndex);
   renderMeldSlot(meldIndex);
   updatePaletteUI();
   updateSelectionHint();
@@ -306,6 +327,7 @@ function renderMeldSlot(meldIndex) {
     rm.addEventListener('click', (e) => {
       e.stopPropagation();
       meld.tiles.splice(i, 1);
+      updateMeldType(meldIndex);
       renderMeldSlot(meldIndex);
       updatePaletteUI();
       updateMeldDropTargets();
