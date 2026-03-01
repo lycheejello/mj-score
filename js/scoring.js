@@ -397,13 +397,6 @@ function calculateScore(hand, rules) {
   const rows = [];
   let total = 0;
 
-  // Helper to add a row
-  function add(rule, fan) {
-    if (fan === 0) return;
-    rows.push({ ...rule, fanEarned: fan });
-    total += fan;
-  }
-
   // Track which rules fired to apply exclusions
   const fired = new Set();
 
@@ -465,6 +458,7 @@ function calculateScore(hand, rules) {
     }
 
     rows.push({ ...rule, fanEarned });
+    total += fanEarned;
   }
 
   // ── Mutual Exclusions ────────────────────────────────────────────────────
