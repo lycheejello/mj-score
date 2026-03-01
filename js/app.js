@@ -474,18 +474,6 @@ function renderMeldSlot(meldIndex) {
       for (let mi = 0; mi < 6; mi++) renderMeldSlot(mi);
     });
 
-    // Picker button only on wild tile chips (not z7 — z7 auto-resolves)
-    if (isWildTile) {
-      const wildBtn = document.createElement('button');
-      wildBtn.className = 'chip-wild-btn';
-      wildBtn.textContent = wildSub ? '寶' : '?';
-      wildBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openWildPicker(key);
-      });
-      chip.appendChild(wildBtn);
-    }
-
     const rm = document.createElement('button');
     rm.className = 'chip-remove';
     rm.textContent = '×';
@@ -502,6 +490,26 @@ function renderMeldSlot(meldIndex) {
     });
     chip.appendChild(rm);
     tilesEl.appendChild(chip);
+  }
+
+  // Wild tile substitution buttons — rendered below chips, outside tap targets
+  if (state.wildTileId) {
+    const wildRow = document.createElement('div');
+    wildRow.className = 'wild-sub-row';
+    let hasWilds = false;
+    for (let i = 0; i < meld.tiles.length; i++) {
+      if (meld.tiles[i] !== state.wildTileId) continue;
+      hasWilds = true;
+      const key = `${meldIndex}-${i}`;
+      const sub = state.wildcardSubs[key];
+      const subTile = sub ? TILE_BY_ID[sub] : null;
+      const btn = document.createElement('button');
+      btn.className = `wild-sub-btn${sub ? ' has-sub' : ''}`;
+      btn.textContent = subTile ? `寶→${subTile.label}` : '寶?';
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openWildPicker(key); });
+      wildRow.appendChild(btn);
+    }
+    if (hasWilds) tilesEl.appendChild(wildRow);
   }
 }
 

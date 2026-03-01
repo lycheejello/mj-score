@@ -326,20 +326,27 @@ header h1 {
 .tile-chip.is-wild {
   border-color: var(--gold);
 }
-.chip-wild-btn {
-  position: absolute;
-  bottom: -5px; left: -5px;
-  width: 16px; height: 16px;
+.wild-sub-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 4px;
+}
+.wild-sub-btn {
+  font-size: 0.6rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--gold);
+  background: rgba(212,168,51,0.1);
+  color: var(--gold);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.wild-sub-btn.has-sub {
   background: var(--gold);
   color: var(--green-dark);
-  border: none;
-  border-radius: 50%;
-  font-size: 0.48rem;
   font-weight: 700;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  line-height: 1;
-  -webkit-tap-highlight-color: transparent;
 }
 .wild-badge {
   position: absolute;
