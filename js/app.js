@@ -47,7 +47,11 @@ function getUsedCounts() {
 }
 
 function getTotalTilesPlaced() {
-  return state.melds.reduce((sum, m) => sum + m.tiles.length, 0);
+  // The 4th tile of a kang is an extra draw — doesn't count toward 17
+  return state.melds.reduce((sum, m, i) => {
+    const count = (i < 5) ? Math.min(m.tiles.length, 3) : m.tiles.length;
+    return sum + count;
+  }, 0);
 }
 
 // Infer meld type from the tiles placed in a slot.
