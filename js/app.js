@@ -14,6 +14,8 @@ const state = {
   selectedPaletteTile: null,  // tile id currently selected from palette
   winningTile: null,          // 'meldIndex-tileIndex' of the winning tile
   selectedFlowers: new Set(), // flower tile ids currently toggled on
+  wildTileId: null,           // which tile is the wildcard this game
+  wildcardSubs: {},           // 'meldIndex-tileIndex' → substitute tile id
 
   conditions: {
     dealer: false,
@@ -53,6 +55,117 @@ function getTotalTilesPlaced() {
   }, 0);
 }
 
+// Resolve wildcard tiles to their substitutes before validation:
+//   z7 (白) always → wild tile
+//   wild tile     → sub if set, otherwise itself (stands for itself)
+function resolveWilds(tiles, meldIndex) {
+  return tiles.map((id, ti) => {
+    if (id === 'z7' && state.wildTileId) return state.wildTileId;
+    if (state.wildTileId && id === state.wildTileId) {
+      return state.wildcardSubs[`${meldIndex}-${ti}`] || id;
+    }
+    return id;
+  });
+}
+
+// Clear all wildcard subs for a meld (called when a tile is removed)
+function clearMeldWildSubs(meldIndex) {
+  const prefix = `${meldIndex}-`;
+  for (const k of Object.keys(state.wildcardSubs)) {
+    if (k.startsWith(prefix)) delete state.wildcardSubs[k];
+  }
+}
+
+// Count wildcard tiles (z7 + wild tile) and sync to conditions panel
+function updateWildcardCount() {
+  const count = state.melds.reduce((n, m) => {
+    return n + m.tiles.filter(id =>
+      id === 'z7' || (state.wildTileId && id === state.wildTileId)
+    ).length;
+  }, 0);
+  state.conditions.wildcards = count;
+  document.getElementById('cond-wildcards').value = count;
+  document.getElementById('mo-bao-row').style.display     = count > 0 ? '' : 'none';
+  document.getElementById('bao-gui-wei-row').style.display = count > 0 ? '' : 'none';
+}
+
+// ── Wildcard Picker ───────────────────────────────────────────────────────────
+
+let _wildPickerKey = null;
+
+// Open picker to set the game-level wild tile
+function openWildTilePicker() {
+  _wildPickerKey = null;
+  const grid = document.getElementById('wild-picker-grid');
+  document.getElementById('wild-picker-title').textContent = 'Which tile is wild this game?';
+  grid.innerHTML = '';
+  for (const tile of ALL_REGULAR_TILES) {
+    const btn = document.createElement('button');
+    btn.className = `tile-btn suit-${tile.suit}${state.wildTileId === tile.id ? ' selected-palette' : ''}`;
+    btn.innerHTML = `<span class="tile-face">${tile.face}</span>`;
+    btn.addEventListener('click', () => {
+      setWildTile(tile.id);
+      closeWildPicker();
+    });
+    grid.appendChild(btn);
+  }
+  document.getElementById('wild-picker').style.display = '';
+}
+
+// Open picker to set what a specific wildcard substitutes for
+function openWildPicker(key) {
+  _wildPickerKey = key;
+  const current = state.wildcardSubs[key];
+  document.getElementById('wild-picker-title').textContent = '寶 stands for…';
+  const grid = document.getElementById('wild-picker-grid');
+  grid.innerHTML = '';
+  for (const tile of ALL_REGULAR_TILES) {
+    if (tile.id === 'z7') continue;  // z7 always = wild tile, not a valid sub
+    const btn = document.createElement('button');
+    btn.className = `tile-btn suit-${tile.suit}${current === tile.id ? ' selected-palette' : ''}`;
+    btn.innerHTML = `<span class="tile-face">${tile.face}</span>`;
+    btn.addEventListener('click', () => {
+      setWildSub(_wildPickerKey, tile.id);
+      closeWildPicker();
+    });
+    grid.appendChild(btn);
+  }
+  document.getElementById('wild-picker').style.display = '';
+}
+
+function closeWildPicker() {
+  document.getElementById('wild-picker').style.display = 'none';
+  _wildPickerKey = null;
+}
+
+function setWildTile(tileId) {
+  state.wildTileId = (state.wildTileId === tileId) ? null : tileId;
+  state.wildcardSubs = {};  // reset subs when wild tile changes
+  renderWildTileBtn();
+  for (let i = 0; i < 6; i++) { updateMeldType(i); renderMeldSlot(i); }
+  updateWildcardCount();
+}
+
+function setWildSub(key, subId) {
+  state.wildcardSubs[key] = subId;
+  const mi = Number(key.split('-')[0]);
+  updateMeldType(mi);
+  renderMeldSlot(mi);
+}
+
+function renderWildTileBtn() {
+  const btn = document.getElementById('wild-tile-btn');
+  if (!btn) return;
+  if (state.wildTileId) {
+    const tile = TILE_BY_ID[state.wildTileId];
+    btn.innerHTML = `<span class="tile-face" style="font-size:1.1rem">${tile.face}</span> <span style="font-size:0.75rem">${tile.label}</span>`;
+    btn.classList.add('active');
+  } else {
+    btn.textContent = '—';
+    btn.classList.remove('active');
+  }
+}
+
 // Infer meld type from the tiles placed in a slot.
 // Returns 'sequence' | 'pung' | 'kang' | null (invalid/incomplete)
 function detectMeldType(tiles) {
@@ -71,7 +184,7 @@ function detectMeldType(tiles) {
 function updateMeldType(meldIndex) {
   if (meldIndex === 5) { state.melds[5].type = 'pair'; return; }
   const meld = state.melds[meldIndex];
-  const detected = detectMeldType(meld.tiles);
+  const detected = detectMeldType(resolveWilds(meld.tiles, meldIndex));
   meld.type = detected || 'sequence';
 
   const badge = document.querySelector(`.meld-type-badge[data-meld="${meldIndex}"]`);
@@ -310,6 +423,7 @@ function onMeldSlotClick(meldIndex) {
   updatePaletteUI();
   updateSelectionHint();
   updateMeldDropTargets();
+  updateWildcardCount();
 }
 
 function renderMeldSlot(meldIndex) {
@@ -328,16 +442,31 @@ function renderMeldSlot(meldIndex) {
 
   for (let i = 0; i < meld.tiles.length; i++) {
     const tileId = meld.tiles[i];
-    const tile = TILE_BY_ID[tileId];
     const key = `${meldIndex}-${i}`;
     const isWinning = state.winningTile === key;
+    // z7 always auto-resolves to wild tile; wild tile can stand for itself or a sub
+    const isZ7     = tileId === 'z7' && !!state.wildTileId;
+    const isWildTile = !!state.wildTileId && tileId === state.wildTileId;
+    const isWild   = isZ7 || isWildTile;
+
+    let displayTile, wildSub = null;
+    if (isZ7) {
+      displayTile = TILE_BY_ID[state.wildTileId];
+    } else if (isWildTile) {
+      wildSub = state.wildcardSubs[key] || null;
+      displayTile = wildSub ? TILE_BY_ID[wildSub] : TILE_BY_ID[tileId];
+    } else {
+      displayTile = TILE_BY_ID[tileId];
+    }
 
     const chip = document.createElement('div');
-    chip.className = `tile-chip suit-${tile.suit}${isWinning ? ' is-winning' : ''}`;
+    chip.className = `tile-chip suit-${displayTile.suit}${isWinning ? ' is-winning' : ''}${isWild ? ' is-wild' : ''}`;
     chip.innerHTML = `
-      <span class="chip-face">${tile.face}</span>
-      <span class="chip-label">${tile.label}</span>
+      <span class="chip-face">${displayTile.face}</span>
+      <span class="chip-label">${displayTile.label}</span>
       ${isWinning ? '<span class="win-star">★</span>' : ''}
+      ${isZ7 ? '<span class="wild-badge">白</span>' : ''}
+      ${isWildTile && wildSub ? '<span class="wild-badge">寶</span>' : ''}
     `;
 
     // Tap chip to mark/unmark as winning tile
@@ -347,17 +476,31 @@ function renderMeldSlot(meldIndex) {
       for (let mi = 0; mi < 6; mi++) renderMeldSlot(mi);
     });
 
+    // Picker button only on wild tile chips (not z7 — z7 auto-resolves)
+    if (isWildTile) {
+      const wildBtn = document.createElement('button');
+      wildBtn.className = 'chip-wild-btn';
+      wildBtn.textContent = wildSub ? '寶' : '?';
+      wildBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openWildPicker(key);
+      });
+      chip.appendChild(wildBtn);
+    }
+
     const rm = document.createElement('button');
     rm.className = 'chip-remove';
     rm.textContent = '×';
     rm.addEventListener('click', (e) => {
       e.stopPropagation();
       if (state.winningTile === key) state.winningTile = null;
+      clearMeldWildSubs(meldIndex);
       meld.tiles.splice(i, 1);
       updateMeldType(meldIndex);
       renderMeldSlot(meldIndex);
       updatePaletteUI();
       updateMeldDropTargets();
+      updateWildcardCount();
     });
     chip.appendChild(rm);
     tilesEl.appendChild(chip);
@@ -396,7 +539,7 @@ function calculateAndShow() {
     for (let i = 0; i < 5; i++) {
       const m = state.melds[i];
       if (m.tiles.length === 0) continue;
-      if (detectMeldType(m.tiles) === null) {
+      if (detectMeldType(resolveWilds(m.tiles, i)) === null) {
         alert(`Meld ${i + 1} is incomplete or invalid (${m.tiles.length} tile${m.tiles.length !== 1 ? 's' : ''}).`);
         return;
       }
@@ -414,12 +557,12 @@ function calculateAndShow() {
     : 'none';
 
   const hand = {
-    melds: state.melds.slice(0, 5).map(m => ({
-      tiles: [...m.tiles],
+    melds: state.melds.slice(0, 5).map((m, i) => ({
+      tiles: resolveWilds([...m.tiles], i),
       type: m.type,
       concealed: m.concealed
     })),
-    pair: [...state.melds[5].tiles],
+    pair: resolveWilds([...state.melds[5].tiles], 5),
     flowers: [],
     conditions: { ...c, menQing, allFrontType }
   };
@@ -536,6 +679,8 @@ function loadPreset() {
   state.selectedPaletteTile = null;
   state.winningTile = preset.winningTile;
   state.selectedFlowers = new Set(preset.flowers);
+  state.wildTileId = null;
+  state.wildcardSubs = {};
   state.conditions.wonFrom = preset.wonFrom;
   state.conditions.flowerCount = preset.flowers.length;
 
@@ -560,6 +705,8 @@ function loadPreset() {
     b.classList.toggle('active', b.dataset.value === preset.wonFrom)
   );
   document.querySelector('.won-from-bar').classList.remove('missing');
+  renderWildTileBtn();
+  updateWildcardCount();
 
   renderFlowerPalette();
   state.selectedFlowers.forEach(fid => {
@@ -584,15 +731,30 @@ function renderResultsPreview() {
     ? state.winningTile.split('-').map(Number)
     : [null, null];
 
-  function makeChip(tileId, isWinning = false) {
-    const tile = TILE_BY_ID[tileId] || FLOWER_TILES.find(t => t.id === tileId);
+  function makeChip(tileId, isWinning = false, key = null) {
+    const isZ7      = tileId === 'z7' && !!state.wildTileId;
+    const isWildTile = !!state.wildTileId && tileId === state.wildTileId;
+    const isWild    = isZ7 || isWildTile;
+
+    let tile, wildSub = null;
+    if (isZ7) {
+      tile = TILE_BY_ID[state.wildTileId];
+    } else if (isWildTile) {
+      wildSub = key ? (state.wildcardSubs[key] || null) : null;
+      tile = wildSub ? TILE_BY_ID[wildSub] : TILE_BY_ID[tileId];
+    } else {
+      tile = TILE_BY_ID[tileId] || FLOWER_TILES.find(t => t.id === tileId);
+    }
     if (!tile) return null;
+
     const chip = document.createElement('div');
-    chip.className = `tile-chip suit-${tile.suit}${isWinning ? ' is-winning' : ''}`;
+    chip.className = `tile-chip suit-${tile.suit}${isWinning ? ' is-winning' : ''}${isWild ? ' is-wild' : ''}`;
     chip.innerHTML = `
       <span class="chip-face">${tile.face}</span>
       <span class="chip-label">${tile.label}</span>
       ${isWinning ? '<span class="win-star">★</span>' : ''}
+      ${isZ7 ? '<span class="wild-badge">白</span>' : ''}
+      ${isWildTile && wildSub ? '<span class="wild-badge">寶</span>' : ''}
     `;
     return chip;
   }
@@ -612,7 +774,7 @@ function renderResultsPreview() {
       group.className = 'preview-meld-group';
       for (let ti = 0; ti < meld.tiles.length; ti++) {
         const isWinning = meldIndex === wtMeldIdx && ti === wtTileIdx;
-        const chip = makeChip(meld.tiles[ti], isWinning);
+        const chip = makeChip(meld.tiles[ti], isWinning, `${meldIndex}-${ti}`);
         if (chip) group.appendChild(chip);
       }
       row.appendChild(group);
@@ -652,7 +814,7 @@ function renderResultsPreview() {
       section.appendChild(lbl);
       const row = document.createElement('div');
       row.className = 'preview-melds-row';
-      const chip = makeChip(tileId, true);
+      const chip = makeChip(tileId, true, state.winningTile);
       if (chip) row.appendChild(chip);
       section.appendChild(row);
       container.appendChild(section);
@@ -690,6 +852,8 @@ function clearAll() {
   state.selectedPaletteTile = null;
   state.winningTile = null;
   state.selectedFlowers = new Set();
+  state.wildTileId = null;
+  state.wildcardSubs = {};
   state.conditions.wonFrom = null;
   document.querySelectorAll('.won-from-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.won-from-bar').classList.remove('missing');
@@ -698,6 +862,8 @@ function clearAll() {
   renderFlowerPalette();
   updateFlowerBadge();
   document.getElementById('flower-special-row').style.display = 'none';
+  renderWildTileBtn();
+  updateWildcardCount();
 
   buildMeldSlots();
   updatePaletteUI();
@@ -711,6 +877,13 @@ function bindEvents() {
   document.getElementById('calc-btn').addEventListener('click', calculateAndShow);
   document.getElementById('clear-btn').addEventListener('click', clearAll);
   document.getElementById('sample-btn').addEventListener('click', loadPreset);
+
+  document.getElementById('wild-tile-btn').addEventListener('click', openWildTilePicker);
+
+  // Wild picker: close on backdrop click
+  document.getElementById('wild-picker').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeWildPicker();
+  });
 
   // Results screen
   document.getElementById('back-btn').addEventListener('click', () => showScreen('screen-main'));

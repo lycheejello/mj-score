@@ -322,6 +322,34 @@ header h1 {
 .tile-chip.suit-z .chip-face { color: #4a2080; }
 .tile-chip.suit-f .chip-face { color: #7b6000; }
 
+/* Wildcard tile */
+.tile-chip.is-wild {
+  border-color: var(--gold);
+}
+.chip-wild-btn {
+  position: absolute;
+  bottom: -5px; left: -5px;
+  width: 16px; height: 16px;
+  background: var(--gold);
+  color: var(--green-dark);
+  border: none;
+  border-radius: 50%;
+  font-size: 0.48rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.wild-badge {
+  position: absolute;
+  bottom: 1px; right: 2px;
+  font-size: 0.45rem;
+  color: var(--gold);
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* Winning tile */
 .tile-chip.is-winning {
   border-color: var(--gold);
@@ -380,6 +408,34 @@ header h1 {
   border-color: var(--gold);
   color: var(--green-dark);
   font-weight: 700;
+}
+
+/* ── Wild Tile Bar ────────────────────────────────────────── */
+.wild-tile-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 0 10px 8px;
+}
+.wild-tile-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  -webkit-tap-highlight-color: transparent;
+}
+.wild-tile-btn.active {
+  background: rgba(212,168,51,0.15);
+  border-color: var(--gold);
+  color: #fff;
 }
 
 /* ── Win Conditions (collapsible) ────────────────────────── */
@@ -507,6 +563,41 @@ header h1 {
   font-size: 0.85rem;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* ── Wildcard Picker Overlay ──────────────────────────────── */
+.wild-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.wild-picker-panel {
+  background: var(--green-dark);
+  width: 100%;
+  max-width: 640px;
+  border-radius: 16px 16px 0 0;
+  padding: 16px 14px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 72vh;
+  overflow-y: auto;
+}
+.wild-picker-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  text-align: center;
+}
+.wild-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
 }
 
 /* ══════════════════════════════════════════════════════════ RESULTS */

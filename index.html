@@ -66,6 +66,12 @@
     </div>
   </div>
 
+  <!-- Wild Tile Selector -->
+  <div class="wild-tile-bar">
+    <span class="won-from-label">Wild tile 寶</span>
+    <button id="wild-tile-btn" class="wild-tile-btn">—</button>
+  </div>
+
   <!-- Win Conditions (collapsible) -->
   <details class="conditions-details" id="conditions-details">
     <summary>Win Conditions <span class="caret">▸</span></summary>
@@ -179,6 +185,14 @@
 
   <div class="step-footer">
     <button id="restart-btn" class="btn-primary">↺ Start Over</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ WILDCARD PICKER -->
+<div id="wild-picker" class="wild-picker-overlay" style="display:none">
+  <div class="wild-picker-panel">
+    <div id="wild-picker-title" class="wild-picker-title"></div>
+    <div id="wild-picker-grid" class="wild-picker-grid"></div>
   </div>
 </div>
 
