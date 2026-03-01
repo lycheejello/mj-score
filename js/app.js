@@ -264,7 +264,7 @@ function buildMeldSlots() {
         <span class="meld-title">${isPair ? 'Pair 對' : `Meld ${i + 1}`}</span>
         <div class="meld-controls">
           ${isPair ? '' : `<span class="meld-type-badge" data-meld="${i}"></span>`}
-          <button class="concealed-toggle is-concealed" data-meld="${i}">暗</button>
+          <button class="concealed-toggle is-concealed" data-meld="${i}">🙈</button>
         </div>
       </div>
       <div class="meld-tiles" data-meld="${i}">
@@ -282,7 +282,7 @@ function buildMeldSlots() {
     slot.querySelector('.concealed-toggle').addEventListener('click', (e) => {
       e.stopPropagation();
       state.melds[i].concealed = !state.melds[i].concealed;
-      e.target.textContent = state.melds[i].concealed ? '暗' : '明';
+      e.target.textContent = state.melds[i].concealed ? '🙈' : '👁';
       e.target.classList.toggle('is-concealed', state.melds[i].concealed);
     });
 
