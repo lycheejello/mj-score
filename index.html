@@ -53,6 +53,18 @@
   <!-- Meld Slots -->
   <div class="melds-grid" id="melds-grid"></div>
 
+  <!-- Won From (required, always visible) -->
+  <div class="won-from-bar">
+    <span class="won-from-label">Winning tile from</span>
+    <div class="won-from-btns">
+      <button class="won-from-btn" data-value="self">自摸</button>
+      <button class="won-from-btn" data-value="z1">東</button>
+      <button class="won-from-btn" data-value="z2">南</button>
+      <button class="won-from-btn" data-value="z3">西</button>
+      <button class="won-from-btn" data-value="z4">北</button>
+    </div>
+  </div>
+
   <!-- Win Conditions (collapsible) -->
   <details class="conditions-details" id="conditions-details">
     <summary>Win Conditions <span class="caret">▸</span></summary>
@@ -67,10 +79,6 @@
         <input type="number" id="cond-dealer-streak" class="number-input" min="0" max="20" value="0">
       </div>
 
-      <div class="condition-row">
-        <label>Self draw 自摸?</label>
-        <label class="toggle"><input type="checkbox" id="cond-zi-mo"><span class="toggle-slider"></span></label>
-      </div>
       <div class="condition-row">
         <label>All concealed 門清?</label>
         <label class="toggle"><input type="checkbox" id="cond-men-qing"><span class="toggle-slider"></span></label>

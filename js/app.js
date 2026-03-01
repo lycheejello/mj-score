@@ -18,7 +18,7 @@ const state = {
   conditions: {
     dealer: false,
     dealerStreak: 0,
-    ziMo: false,
+    wonFrom: null,   // 'self' | 'z1' | 'z2' | 'z3' | 'z4'
     menQing: false,
     allFrontType: 'none',
     winType: 'normal',
@@ -370,6 +370,19 @@ function renderMeldSlot(meldIndex) {
 // ── Calculate & Results ───────────────────────────────────────────────────────
 
 function calculateAndShow() {
+  // Require winning tile
+  if (!state.winningTile) {
+    alert('Tap a tile in your hand to mark the winning tile (★).');
+    return;
+  }
+  // Require won-from
+  if (!state.conditions.wonFrom) {
+    document.querySelector('.won-from-bar').classList.add('missing');
+    document.querySelector('.won-from-bar').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    alert('Select where the winning tile came from.');
+    return;
+  }
+
   // Validate pair slot has 2 tiles
   if (state.melds[5].tiles.length !== 2) {
     alert('The pair slot needs exactly 2 tiles.');
@@ -447,6 +460,9 @@ function clearAll() {
   state.selectedPaletteTile = null;
   state.winningTile = null;
   state.selectedFlowers = new Set();
+  state.conditions.wonFrom = null;
+  document.querySelectorAll('.won-from-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.won-from-bar').classList.remove('missing');
   state.conditions.flowerCount = 0;
   document.getElementById('cond-flowers').value = 0;
   renderFlowerPalette();
@@ -491,8 +507,15 @@ function bindEvents() {
   document.getElementById('cond-dealer-streak').addEventListener('input', (e) => {
     state.conditions.dealerStreak = Number(e.target.value) || 0;
   });
-  document.getElementById('cond-zi-mo').addEventListener('change', (e) => {
-    state.conditions.ziMo = e.target.checked;
+  document.querySelectorAll('.won-from-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = btn.dataset.value;
+      state.conditions.wonFrom = (state.conditions.wonFrom === val) ? null : val;
+      document.querySelectorAll('.won-from-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.value === state.conditions.wonFrom)
+      );
+      document.querySelector('.won-from-bar').classList.remove('missing');
+    });
   });
   document.getElementById('cond-men-qing').addEventListener('change', (e) => {
     state.conditions.menQing = e.target.checked;
