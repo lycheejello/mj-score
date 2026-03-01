@@ -732,7 +732,6 @@ function renderResultsPreview() {
   const container = document.getElementById('results-hand-tiles');
   container.innerHTML = '';
 
-  const wonFromLabels = { self: '自摸', z1: '東', z2: '南', z3: '西', z4: '北' };
   const [wtMeldIdx, wtTileIdx] = state.winningTile
     ? state.winningTile.split('-').map(Number)
     : [null, null];
@@ -806,26 +805,6 @@ function renderResultsPreview() {
   const conSec = makeSection('暗 Concealed', concealedMelds);
   if (expSec) container.appendChild(expSec);
   if (conSec) container.appendChild(conSec);
-
-  // Winning tile section
-  if (wtMeldIdx !== null) {
-    const meld = state.melds[wtMeldIdx];
-    const tileId = meld?.tiles[wtTileIdx];
-    if (tileId) {
-      const section = document.createElement('div');
-      section.className = 'preview-section preview-winning-section';
-      const lbl = document.createElement('div');
-      lbl.className = 'preview-section-label';
-      lbl.textContent = `★ Winning tile — ${wonFromLabels[state.conditions.wonFrom] || ''}`;
-      section.appendChild(lbl);
-      const row = document.createElement('div');
-      row.className = 'preview-melds-row';
-      const chip = makeChip(tileId, true, state.winningTile);
-      if (chip) row.appendChild(chip);
-      section.appendChild(row);
-      container.appendChild(section);
-    }
-  }
 
   // Flowers section
   if (state.selectedFlowers.size > 0) {

@@ -650,9 +650,6 @@ header h1 {
   letter-spacing: 0.08em;
   color: rgba(255,255,255,0.5);
 }
-.preview-winning-section .preview-section-label {
-  color: var(--gold);
-}
 .preview-melds-row {
   display: flex;
   flex-wrap: wrap;

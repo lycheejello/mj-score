@@ -1,4 +1,4 @@
-const CACHE = 'mj-score-v8';
+const CACHE = 'mj-score-v9';
 const ASSETS = [
   './',
   './index.html',
