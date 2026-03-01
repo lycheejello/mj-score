@@ -10,7 +10,7 @@ yi_tiao_long,1/9 Patterns,一條龍,Yītiáo lóng,Complete 1–9 run in one sui
 hun_yao,1/9 Patterns,混幺,Hùn yao,Only 1s / 9s and winds/dragons — pungs or 123/789 sequences only,10,auto,Superseded by quan_yao if all pungs
 quan_dai_yao,1/9 Patterns,全帶幺,Quán dài yao,Every meld contains a 1 or 9 (123/789/111/999 only),20,auto,Superseded by quan_yao
 quan_yao,1/9 Patterns,全幺,Quán yao,All pungs of 1s and 9s only (111/999),40,auto,Supersedes quan_dai_yao
-shi_san_yao,1/9 Patterns,十三幺,Shísān yao,One of each 1 and 9 from each suit plus one of each wind/dragon,40,manual,Special hand — applicability to 17-tile TW mahjong uncertain
+shi_san_yao,1/9 Patterns,十三幺,Shísān yao,One each of B1 B9 M1 M9 C1 C9 East South West North 中發白 + pair of any one + any valid meld (17-tile variant),40,auto,17-tile variant: 13 orphans + pair + 1 free meld
 zi_pung,Winds/Dragons,字,Zì,Pung of any wind or dragon,1,auto,Per pung — stacks
 wu_zi,Winds/Dragons,無字,Wú Zì,No winds or dragons in hand,1,auto,
 wu_zi_wu_hua,Winds/Dragons,無字無花,Wú zì wú huā,No winds / dragons and no flowers,5,auto,Supersedes wu_zi and flower_none

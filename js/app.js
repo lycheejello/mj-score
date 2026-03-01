@@ -26,8 +26,7 @@ const state = {
     baoGuiWei: false,
     flowerCount: 0,
     flowerSpecial: 'none',
-    niGu: false,
-    shiSanYao: false
+    niGu: false
   },
 
   rules: []
@@ -386,13 +385,21 @@ function calculateAndShow() {
     alert('The pair slot needs exactly 2 tiles.');
     return;
   }
-  // Validate all non-pair melds that have tiles form a valid type
-  for (let i = 0; i < 5; i++) {
-    const m = state.melds[i];
-    if (m.tiles.length === 0) continue;
-    if (detectMeldType(m.tiles) === null) {
-      alert(`Meld ${i + 1} is incomplete or invalid (${m.tiles.length} tile${m.tiles.length !== 1 ? 's' : ''}).`);
-      return;
+  // 十三幺 hands don't follow normal meld structure — skip meld validation if detected
+  const isShiSanYao = (() => {
+    const orphans = ['b1','b9','m1','m9','p1','p9','z1','z2','z3','z4','z5','z6','z7'];
+    const allIds = state.melds.flatMap(m => m.tiles);
+    return new Set(allIds.filter(id => orphans.includes(id))).size === 13;
+  })();
+
+  if (!isShiSanYao) {
+    for (let i = 0; i < 5; i++) {
+      const m = state.melds[i];
+      if (m.tiles.length === 0) continue;
+      if (detectMeldType(m.tiles) === null) {
+        alert(`Meld ${i + 1} is incomplete or invalid (${m.tiles.length} tile${m.tiles.length !== 1 ? 's' : ''}).`);
+        return;
+      }
     }
   }
 
@@ -553,9 +560,6 @@ function bindEvents() {
   });
   document.getElementById('cond-ni-gu').addEventListener('change', (e) => {
     state.conditions.niGu = e.target.checked;
-  });
-  document.getElementById('cond-shi-san-yao').addEventListener('change', (e) => {
-    state.conditions.shiSanYao = e.target.checked;
   });
   document.getElementById('show-zero-rules').addEventListener('change', (e) => {
     document.querySelectorAll('.zero-row').forEach(r =>

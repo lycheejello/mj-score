@@ -368,6 +368,16 @@ const detectors = {
     return allSameSuit(hand);
   },
 
+  // Special Hands
+  shi_san_yao(hand) {
+    // 17-tile variant: one each of the 13 orphan tiles must all appear in the hand.
+    // The pair is one orphan duplicate; the remaining 3 tiles are the free meld.
+    const orphans = ['b1','b9','m1','m9','p1','p9','z1','z2','z3','z4','z5','z6','z7'];
+    const allIds  = [...hand.melds.flatMap(m => m.tiles), ...hand.pair];
+    const covered = new Set(allIds.filter(id => orphans.includes(id)));
+    return covered.size === 13;
+  },
+
   // Wildcards
   wu_bao(hand) {
     return hand.conditions.wildcards === 0;
