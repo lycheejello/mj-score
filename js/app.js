@@ -18,9 +18,7 @@ const state = {
   conditions: {
     dealer: false,
     dealerStreak: 0,
-    wonFrom: null,   // 'self' | 'z1' | 'z2' | 'z3' | 'z4'
-    menQing: false,
-    allFrontType: 'none',
+    wonFrom: null,   // 'self' | 'z1' | 'z2' | 'z3' | 'z4'  (drives menQing + allFrontType)
     winType: 'normal',
     instantWin: 'none',
     wildcards: 0,
@@ -399,6 +397,15 @@ function calculateAndShow() {
   }
 
   const c = state.conditions;
+
+  // Auto-detect menQing and allFrontType from meld concealed states
+  const filledMelds = state.melds.slice(0, 5).filter(m => m.tiles.length > 0);
+  const menQing    = filledMelds.length > 0 && filledMelds.every(m => m.concealed);
+  const allExposed = filledMelds.length > 0 && filledMelds.every(m => !m.concealed);
+  const allFrontType = allExposed
+    ? (c.wonFrom === 'self' ? 'ban_qiu' : 'quan_qiu')
+    : 'none';
+
   const hand = {
     melds: state.melds.slice(0, 5).map(m => ({
       tiles: [...m.tiles],
@@ -407,7 +414,7 @@ function calculateAndShow() {
     })),
     pair: [...state.melds[5].tiles],
     flowers: [],
-    conditions: { ...c }
+    conditions: { ...c, menQing, allFrontType }
   };
 
   const { total, rows } = calculateScore(hand, state.rules);
@@ -516,12 +523,6 @@ function bindEvents() {
       );
       document.querySelector('.won-from-bar').classList.remove('missing');
     });
-  });
-  document.getElementById('cond-men-qing').addEventListener('change', (e) => {
-    state.conditions.menQing = e.target.checked;
-  });
-  document.getElementById('cond-all-front').addEventListener('change', (e) => {
-    state.conditions.allFrontType = e.target.value;
   });
   document.getElementById('cond-win-type').addEventListener('change', (e) => {
     state.conditions.winType = e.target.value;
