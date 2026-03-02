@@ -961,7 +961,6 @@ function buildLiveHand() {
 function updateLiveScore() {
   const bar = document.getElementById('live-score-bar');
   if (!bar) return;
-  if (state.melds[5].tiles.length < 2) { bar.style.display = 'none'; return; }
   try {
     const { total, rows } = calculateScore(buildLiveHand(), state.rules);
     const active = rows.filter(r => r.fanEarned > 0);
