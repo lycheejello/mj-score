@@ -295,6 +295,7 @@ function renderRulesScreen() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {
+  document.querySelector('.version-label').textContent = APP_VERSION;
   await switchRuleset(localStorage.getItem('mj-ruleset') || 'mj-crew');
   buildPalette();
   buildMeldSlots();
