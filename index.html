@@ -18,8 +18,15 @@
     <div class="progress-pill">
       <span id="progress-label">0 / 17</span>
     </div>
-    <span class="version-label">v10</span>
+    <span class="version-label">v11</span>
   </header>
+
+  <div class="ruleset-bar">
+    <span class="ruleset-label">Ruleset</span>
+    <button class="ruleset-btn active" data-set="mj-crew">MJ Crew</button>
+
+    <button id="view-rules-btn" class="ruleset-view-btn">View Rules</button>
+  </div>
 
   <!-- Compact Palette -->
   <div class="palette-section">
@@ -186,6 +193,15 @@
   <div class="step-footer">
     <button id="restart-btn" class="btn-primary">↺ Start Over</button>
   </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ RULES SCREEN -->
+<div id="screen-rules" class="screen">
+  <header>
+    <button id="rules-back-btn" class="btn-back">← Back</button>
+    <div id="rules-screen-title" class="step-indicator"></div>
+  </header>
+  <div id="rules-table-wrap" class="rules-table-wrap"></div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ WILDCARD PICKER -->

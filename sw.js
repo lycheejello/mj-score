@@ -1,4 +1,4 @@
-const CACHE = 'mj-score-v10';
+const CACHE = 'mj-score-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,8 @@ const ASSETS = [
   './js/csv-parser.js',
   './js/scoring.js',
   './js/app.js',
-  './data/scoring.csv'
+  './data/scoring.csv',
+  './data/scoring-en.csv'
 ];
 
 self.addEventListener('install', e => {
