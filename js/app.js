@@ -756,7 +756,6 @@ function renderResultsPreview() {
     chip.className = `tile-chip suit-${tile.suit}${isWinning ? ' is-winning' : ''}${isWild ? ' is-wild' : ''}`;
     chip.innerHTML = `
       <span class="chip-face">${tile.face}</span>
-      <span class="chip-label">${tile.label}</span>
       ${isWinning ? '<span class="win-star">★</span>' : ''}
       ${isZ7 ? '<span class="wild-badge">白</span>' : ''}
       ${isWildTile && wildSub ? '<span class="wild-badge">寶</span>' : ''}
