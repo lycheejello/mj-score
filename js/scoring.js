@@ -378,13 +378,13 @@ const detectors = {
     return covered.size === 13;
   },
 
-  // Wildcards
+  // Wildcards — only relevant when a wild tile is chosen for this game
   wu_bao(hand) {
-    return hand.conditions.wildcards === 0;
+    return !!hand.conditions.hasWildTile && hand.conditions.wildcards === 0;
   },
 
   si_bao(hand) {
-    return hand.conditions.wildcards >= 4;
+    return !!hand.conditions.hasWildTile && hand.conditions.wildcards >= 4;
   }
 };
 
@@ -447,8 +447,8 @@ function calculateScore(hand, rules) {
         tian_hu:         c.instantWin === 'tian_hu',
         di_hu:           c.instantWin === 'di_hu',
         ni_gu_ni_gu:     c.niGu,
-        mo_bao:          c.moBao,
-        bao_gui_wei:     c.baoGuiWei
+        mo_bao:          c.moBao      && !!c.hasWildTile,
+        bao_gui_wei:     c.baoGuiWei  && !!c.hasWildTile
       };
       if (manualMap[id]) {
         fanEarned = fanBase;

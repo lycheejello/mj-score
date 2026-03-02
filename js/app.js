@@ -652,7 +652,7 @@ function calculateAndShow() {
     })),
     pair: resolveWilds([...state.melds[5].tiles], 5),
     flowers: [],
-    conditions: { ...c, menQing, allFrontType }
+    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId }
   };
 
   const { total, rows } = calculateScore(hand, state.rules);
@@ -954,7 +954,7 @@ function buildLiveHand() {
     })),
     pair: resolveWilds([...state.melds[5].tiles], 5),
     flowers: [],
-    conditions: { ...c, menQing, allFrontType }
+    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId }
   };
 }
 
