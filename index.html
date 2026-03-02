@@ -224,6 +224,10 @@
 <script src="js/app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController) window.location.reload();
+    });
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 </script>
