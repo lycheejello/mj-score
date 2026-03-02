@@ -143,6 +143,7 @@ function setWildTile(tileId) {
   renderWildTileBtn();
   for (let i = 0; i < 6; i++) { updateMeldType(i); renderMeldSlot(i); }
   updateWildcardCount();
+  updateLiveScore();
 }
 
 function setWildSub(key, subId) {
@@ -150,6 +151,7 @@ function setWildSub(key, subId) {
   const mi = Number(key.split('-')[0]);
   updateMeldType(mi);
   renderMeldSlot(mi);
+  updateLiveScore();
 }
 
 function renderWildTileBtn() {
@@ -363,6 +365,7 @@ function onFlowerClick(id, btn) {
   document.getElementById('cond-flowers').value = n;
   updateFlowerBadge();
   document.getElementById('flower-special-row').style.display = n >= 6 ? '' : 'none';
+  updateLiveScore();
 }
 
 function updateFlowerBadge() {
@@ -472,6 +475,7 @@ function buildMeldSlots() {
       state.melds[i].concealed = !state.melds[i].concealed;
       e.target.textContent = state.melds[i].concealed ? '🙈' : '👁';
       e.target.classList.toggle('is-concealed', state.melds[i].concealed);
+      updateLiveScore();
     });
 
     grid.appendChild(slot);
@@ -496,6 +500,7 @@ function onMeldSlotClick(meldIndex) {
   updateSelectionHint();
   updateMeldDropTargets();
   updateWildcardCount();
+  updateLiveScore();
 }
 
 function renderMeldSlot(meldIndex) {
@@ -546,6 +551,7 @@ function renderMeldSlot(meldIndex) {
       e.stopPropagation();
       state.winningTile = (state.winningTile === key) ? null : key;
       for (let mi = 0; mi < 6; mi++) renderMeldSlot(mi);
+      updateLiveScore();
     });
 
     const rm = document.createElement('button');
@@ -561,6 +567,7 @@ function renderMeldSlot(meldIndex) {
       updatePaletteUI();
       updateMeldDropTargets();
       updateWildcardCount();
+      updateLiveScore();
     });
     chip.appendChild(rm);
     tilesEl.appendChild(chip);
@@ -800,6 +807,7 @@ function loadPreset() {
   updatePaletteUI();
   updateSelectionHint();
   updateMeldDropTargets();
+  updateLiveScore();
 }
 
 function renderResultsPreview() {
@@ -927,6 +935,49 @@ function clearAll() {
   updatePaletteUI();
   updateSelectionHint();
   updateMeldDropTargets();
+  updateLiveScore();
+}
+
+// ── Live Score Preview ────────────────────────────────────────────────────────
+
+function buildLiveHand() {
+  const c = state.conditions;
+  const filledMelds = state.melds.slice(0, 5).filter(m => m.tiles.length > 0);
+  const menQing    = filledMelds.length > 0 && filledMelds.every(m => m.concealed);
+  const allExposed = filledMelds.length > 0 && filledMelds.every(m => !m.concealed);
+  const allFrontType = allExposed
+    ? (c.wonFrom === 'self' ? 'ban_qiu' : 'quan_qiu') : 'none';
+  return {
+    melds: state.melds.slice(0, 5).map((m, i) => ({
+      tiles: resolveWilds([...m.tiles], i), type: m.type, concealed: m.concealed
+    })),
+    pair: resolveWilds([...state.melds[5].tiles], 5),
+    flowers: [],
+    conditions: { ...c, menQing, allFrontType }
+  };
+}
+
+function updateLiveScore() {
+  const bar = document.getElementById('live-score-bar');
+  if (!bar) return;
+  if (state.melds[5].tiles.length < 2) { bar.style.display = 'none'; return; }
+  try {
+    const { total, rows } = calculateScore(buildLiveHand(), state.rules);
+    const active = rows.filter(r => r.fanEarned > 0);
+    if (active.length === 0) { bar.style.display = 'none'; return; }
+    document.getElementById('live-fan-count').textContent = total;
+    const chips = document.getElementById('live-score-chips');
+    chips.innerHTML = '';
+    for (const r of active) {
+      const chip = document.createElement('span');
+      chip.className = 'live-chip';
+      chip.textContent = `${r.chinese} · ${r.pinyin} ${r.fanEarned}`;
+      chips.appendChild(chip);
+    }
+    bar.style.display = '';
+  } catch(e) {
+    bar.style.display = 'none';
+  }
 }
 
 // ── Event Bindings ────────────────────────────────────────────────────────────
@@ -975,9 +1026,11 @@ function bindEvents() {
   document.getElementById('cond-dealer').addEventListener('change', (e) => {
     state.conditions.dealer = e.target.checked;
     document.getElementById('streak-row').style.display = e.target.checked ? '' : 'none';
+    updateLiveScore();
   });
   document.getElementById('cond-dealer-streak').addEventListener('input', (e) => {
     state.conditions.dealerStreak = Number(e.target.value) || 0;
+    updateLiveScore();
   });
   document.querySelectorAll('.won-from-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -987,37 +1040,46 @@ function bindEvents() {
         b.classList.toggle('active', b.dataset.value === state.conditions.wonFrom)
       );
       document.querySelector('.won-from-bar').classList.remove('missing');
+      updateLiveScore();
     });
   });
   document.getElementById('cond-win-type').addEventListener('change', (e) => {
     state.conditions.winType = e.target.value;
+    updateLiveScore();
   });
   document.getElementById('cond-instant').addEventListener('change', (e) => {
     state.conditions.instantWin = e.target.value;
+    updateLiveScore();
   });
   document.getElementById('cond-flowers').addEventListener('input', (e) => {
     const n = Number(e.target.value) || 0;
     state.conditions.flowerCount = n;
     updateFlowerBadge();
     document.getElementById('flower-special-row').style.display = n >= 6 ? '' : 'none';
+    updateLiveScore();
   });
   document.getElementById('cond-flower-special').addEventListener('change', (e) => {
     state.conditions.flowerSpecial = e.target.value;
+    updateLiveScore();
   });
   document.getElementById('cond-wildcards').addEventListener('input', (e) => {
     const n = Number(e.target.value) || 0;
     state.conditions.wildcards = n;
     document.getElementById('mo-bao-row').style.display     = n > 0 ? '' : 'none';
     document.getElementById('bao-gui-wei-row').style.display = n > 0 ? '' : 'none';
+    updateLiveScore();
   });
   document.getElementById('cond-mo-bao').addEventListener('change', (e) => {
     state.conditions.moBao = e.target.checked;
+    updateLiveScore();
   });
   document.getElementById('cond-bao-gui-wei').addEventListener('change', (e) => {
     state.conditions.baoGuiWei = e.target.checked;
+    updateLiveScore();
   });
   document.getElementById('cond-ni-gu').addEventListener('change', (e) => {
     state.conditions.niGu = e.target.checked;
+    updateLiveScore();
   });
   document.getElementById('show-zero-rules').addEventListener('change', (e) => {
     document.querySelectorAll('.zero-row').forEach(r =>

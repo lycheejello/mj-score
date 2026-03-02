@@ -830,3 +830,36 @@ header h1 {
 .cond-badge.auto   { background: #e8f5e9; color: #2e7d32; }
 .cond-badge.manual { background: #fff3e0; color: #e65100; }
 .cond-badge.count  { background: #e3f2fd; color: #1565c0; }
+
+/* ── Live Score Bar ───────────────────────────────────────── */
+.live-score-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(0,0,0,0.25);
+  margin: 0 10px 8px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.1);
+  flex-wrap: wrap;
+}
+.live-score-total {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.live-score-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.live-chip {
+  font-size: 0.7rem;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 2px 7px;
+  color: rgba(255,255,255,0.8);
+  white-space: nowrap;
+}
