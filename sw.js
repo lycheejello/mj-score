@@ -1,9 +1,11 @@
-const CACHE = 'mj-score-v12';
+importScripts('./js/version.js');
+const CACHE = 'mj-score-' + APP_VERSION;
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './css/styles.css',
+  './js/version.js',
   './js/tiles.js',
   './js/csv-parser.js',
   './js/scoring.js',
