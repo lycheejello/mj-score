@@ -1,0 +1,60 @@
+id,category,chinese,pinyin,description_en,fan,condition_type,notes
+pair_258,Pair,將眼,Jiāng yǎn,Pair is 2 / 5 / 8,1,auto,
+flower_each,Bonus Tiles,花,Huā,Each bonus tile,1,count,fan_per=1
+flower_none,Bonus Tiles,無花,Wú Huā,No bonus tiles at all,1,auto,
+flower_7steal,Bonus Tiles,七搶一,Qī qiǎng yī,Player draws 7th bonus tile from another player — that player pays,40,manual,Special payout rule
+flower_8win,Bonus Tiles,八花,Bā huā,Player has 7–8 bonus tiles — all players pay,40,manual,Exact threshold unclear from source
+lao_shao,Terminal Patterns,老少配,Lǎoshào pèi,111+999 or 123+789 of same suit,2,auto,
+duan_yao,Terminal Patterns,斷幺,Duàn yao,No terminals / winds / dragons in hand,5,auto,
+yi_tiao_long,Terminal Patterns,一條龍,Yītiáo lóng,Complete 1–9 run in one suit (123+456+789),10,auto,
+hun_yao,Terminal Patterns,混幺,Hùn yao,Only terminals and winds/dragons — pungs or 123/789 sequences only,10,auto,Superseded by quan_yao if all pungs
+quan_dai_yao,Terminal Patterns,全帶幺,Quán dài yao,Every meld contains a terminal (123/789/111/999 only),20,auto,Superseded by quan_yao
+quan_yao,Terminal Patterns,全幺,Quán yao,All pungs of terminals only (111/999),40,auto,Supersedes quan_dai_yao
+shi_san_yao,Terminal Patterns,十三幺,Shísān yao,One each of B1 B9 M1 M9 C1 C9 East South West North 中發白 + pair of any one + any valid meld (17-tile variant),40,auto,17-tile variant: 13 orphans + pair + 1 free meld
+zi_pung,Honors,字,Zì,Pung of any wind or dragon,1,auto,Per pung — stacks
+wu_zi,Honors,無字,Wú Zì,No winds or dragons in hand,1,auto,
+wu_zi_wu_hua,Honors,無字無花,Wú zì wú huā,No winds / dragons and no bonus tiles,5,auto,Supersedes wu_zi and flower_none
+xiao_san_yuan,Honors,小三元,Xiǎosān yuán,Two dragon pungs + dragon pair,15,auto,Superseded by da_san_yuan
+da_san_yuan,Honors,大三元,Dà sān yuán,Three dragon pungs (中中中 + 發發發 + 白白白),30,auto,Supersedes xiao_san_yuan
+xiao_san_feng,Honors,小三風,Xiǎosān fēng,Two wind pungs + wind pair,15,auto,Superseded by da_san_feng / xiao_si_xi
+da_san_feng,Honors,大三風,Dà sān fēng,Three wind pungs,20,auto,Superseded by xiao_si_xi
+xiao_si_xi,Honors,小四喜,Xiǎo sì xǐ,Three wind pungs + wind pair,30,auto,Superseded by da_si_xi
+da_si_xi,Honors,大四喜,Dà sì xǐ,Four wind pungs,40,auto,Supersedes xiao_si_xi
+dealer,Dealer,庄家,Zhuāngjiā,Player is the dealer,1,manual,
+dealer_streak,Dealer,連一拉一,Lián yī lā yī,Each consecutive win as dealer (enter count),2,count,fan_per=2; count = number of consecutive wins beyond first
+zi_mo,Self Draw,自摸,Zìmō,Win by self draw,1,manual,
+men_qing_zi_mo,Self Draw,門清自摸,Mén qīng zìmō,All concealed melds + self draw,3,manual,Replaces zi_mo
+yi_du,Winning Tile,一獨,Yī dú,Win on a single out where other outs existed (e.g. 12345 draw 3),1,manual,Points accuracy uncertain
+dui_peng,Winning Tile,對碰/洞洞,Duì pèng / Dòng dòng,Win by completing a pung (1122 → win on 1),1,manual,Points accuracy uncertain
+du_du,Winning Tile,獨獨,Dú dú,Win on closed / middle position or pair wait (12 draw 3; 13 draw 2; pair wait),2,manual,Description/points accuracy uncertain
+qiang_gang,Winning Tile,搶槓,Qiǎng gàng,Win on a tile another player adds to an exposed pung to make a kong,1,manual,
+gang_shang_gang,Winning Tile,槓上槓,Gàng shàng gàng,Win on the extra draw tile after a kong or bonus tile replacement,1,manual,
+xiao_ping,Sets,小平,Xiǎopíng,All sequences (no pungs) with bonus tiles,4,auto,Requires at least one bonus tile; superseded by da_ping if no bonus tiles
+da_ping,Sets,大平,Dàpíng,All sequences (no pungs) and no bonus tiles,10,auto,Supersedes xiao_ping
+er_an_ke,Sets,二暗楷,Èr àn gàng,Exactly 2 concealed pungs/kongs,3,auto,Superseded by san_an_ke etc.
+san_an_ke,Sets,三暗楷,Sān àn kǎi,Exactly 3 concealed pungs/kongs,10,auto,Superseded by si_an_ke etc.
+si_an_ke,Sets,四暗楷,Sì àn kǎi,Exactly 4 concealed pungs/kongs,20,auto,Superseded by wu_an_ke
+wu_an_ke,Sets,五暗楷,Wǔ àn kǎi,All 5 melds are concealed pungs/kongs,40,auto,Supersedes lower an_ke counts
+peng_peng_hu,Sets,碰碰胡,Pèng pèng hú,All pungs/kongs + 1 pair,15,auto,
+ming_gang,Kongs,明槓,Míng gàng,Exposed kong,1,count,fan_per=1; count = number of exposed kongs
+an_gang,Kongs,暗槓,Àn gàng,Concealed kong,2,count,fan_per=2; count = number of concealed kongs
+si_gui_yi,Kongs,四歸一,Sì guī yī,Break one kong into sequence (1234+444),2,auto,
+si_gui_er,Kongs,四歸二,Sì guī èr,Break kong twice (123+123+33),5,auto,
+si_gui_san,Kongs,四歸三,Sì guī sān,Break kong three times (123+123+234+345),10,auto,
+yi_ban_gao,Repeated Patterns,一般高,Yībān gāo,Two identical sequences in same suit (123+123),3,auto,
+wei_ba,Repeated Patterns,尾巴,Wěibā,Three consecutive numbers — two as pung and third as pair (111+222+33),5,auto,
+san_xiang_feng,Repeated Patterns,三相逢,Sān xiàng féng,Same sequence in all 3 suits OR same pung in 3 suits OR 3 consecutive pungs in 1 suit,10,auto,
+shuang_long_bao,Repeated Patterns,雙龍抱,Shuānglóng bào,Two pairs of identical sequences (123+123+456+456),20,auto,
+ban_qiu,All Exposed,半求,Bàn qiú,All tiles exposed + win by self draw,5,manual,
+quan_qiu,All Exposed,全求,Quán qiú,All tiles exposed + win by discard,10,manual,
+tian_ting,Special Wins,天聽,Tiān tīng,Dealt a winning hand (tenpai from deal) — everyone pays,20,manual,
+tian_hu,Special Wins,天糊,Tiān hú,Dealer wins on first draw — everyone pays,40,manual,
+di_hu,Special Wins,地糊,Dì hú,Non-dealer wins on dealer's first discard — dealer pays,40,manual,
+wu_men_qi,Special Hands,五門齊,Wǔ mén qí,Hand contains all 5 suits (bamboo + character + circle + wind + dragon),10,auto,
+ni_gu_ni_gu,Special Hands,尼故尼故,Ní gù ní gù,All pairs (7 pairs for 17-tile hand),25,manual,Special hand — no standard meld grouping
+hun_yi_se,Special Hands,混一色,Hùn yīsè,All tiles from one suit plus winds/dragons,15,auto,Superseded by qing_yi_se
+qing_yi_se,Special Hands,清一色,Qīngyīsè,All tiles from exactly one suit (no winds/dragons),40,auto,Supersedes hun_yi_se
+wu_bao,Wild Tiles,無寶,Wú bǎo,No wild tiles used,1,auto,
+yi_bao,Wild Tiles,一寶,Yī bǎo,Each wild tile used,1,count,fan_per=1
+mo_bao,Wild Tiles,摸寶,Mō bǎo,Win by self-drawing a wild tile,1,manual,
+si_bao,Wild Tiles,四寶,Sì bǎo,Four wild tiles in hand,40,auto,Supersedes yi_bao count bonus at 4

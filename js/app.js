@@ -31,7 +31,8 @@ const state = {
     niGu: false
   },
 
-  rules: []
+  rules: [],
+  ruleSet: 'tw'
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -211,15 +212,88 @@ function allSlotsFull() {
   return state.melds.every((_, i) => isSlotFull(i));
 }
 
+// ── Ruleset Switching ─────────────────────────────────────────────────────────
+// To add a new ruleset: drop a CSV in data/, add one entry to each map below,
+// and add a <button class="ruleset-btn" data-set="..."> in the ruleset bar.
+
+const RULESETS = {
+  'mj-crew': './data/scoring.csv',
+  'csf':     './data/scoring-en.csv',
+};
+
+const RULESET_LABELS = {
+  'mj-crew': 'MJ Crew',
+  'csf':     'CSF Rules',
+};
+
+async function switchRuleset(set) {
+  const file = RULESETS[set] || RULESETS['mj-crew'];
+  state.ruleSet = set;
+  try {
+    const res = await fetch(file);
+    state.rules = parseCSV(await res.text());
+  } catch (e) {
+    console.warn('Could not load', file, e);
+  }
+  localStorage.setItem('mj-ruleset', set);
+  document.querySelectorAll('.ruleset-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.set === set)
+  );
+}
+
+function renderRulesScreen() {
+  const label = RULESET_LABELS[state.ruleSet] || state.ruleSet;
+  document.getElementById('rules-screen-title').textContent = label + ' — Rules';
+
+  const wrap = document.getElementById('rules-table-wrap');
+  wrap.innerHTML = '';
+
+  // Group rules by category
+  const grouped = [];
+  const seen = {};
+  for (const rule of state.rules) {
+    if (!seen[rule.category]) {
+      seen[rule.category] = [];
+      grouped.push({ category: rule.category, rules: seen[rule.category] });
+    }
+    seen[rule.category].push(rule);
+  }
+
+  for (const { category, rules } of grouped) {
+    const section = document.createElement('div');
+    section.className = 'rules-section';
+
+    const header = document.createElement('div');
+    header.className = 'rules-category-header';
+    header.textContent = category;
+    section.appendChild(header);
+
+    const table = document.createElement('table');
+    table.className = 'rules-ref-table';
+    for (const rule of rules) {
+      const tr = document.createElement('tr');
+      const condBadge = rule.condition_type === 'auto'   ? '<span class="cond-badge auto">auto</span>'
+                      : rule.condition_type === 'count'  ? '<span class="cond-badge count">count</span>'
+                      : '<span class="cond-badge manual">manual</span>';
+      tr.innerHTML = `
+        <td class="rr-name">
+          <span class="rr-zh">${rule.chinese}</span>
+          <span class="rr-py">${rule.pinyin}</span>
+        </td>
+        <td class="rr-desc">${rule.description_en} ${condBadge}</td>
+        <td class="rr-fan">${rule.fan}</td>
+      `;
+      table.appendChild(tr);
+    }
+    section.appendChild(table);
+    wrap.appendChild(section);
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {
-  try {
-    const res = await fetch('./data/scoring.csv');
-    state.rules = parseCSV(await res.text());
-  } catch (e) {
-    console.warn('Could not load scoring.csv', e);
-  }
+  await switchRuleset(localStorage.getItem('mj-ruleset') || 'mj-crew');
   buildPalette();
   buildMeldSlots();
   bindEvents();
@@ -861,6 +935,16 @@ function bindEvents() {
   document.getElementById('calc-btn').addEventListener('click', calculateAndShow);
   document.getElementById('clear-btn').addEventListener('click', clearAll);
   document.getElementById('sample-btn').addEventListener('click', loadPreset);
+
+  document.querySelectorAll('.ruleset-btn').forEach(btn =>
+    btn.addEventListener('click', () => switchRuleset(btn.dataset.set))
+  );
+
+  document.getElementById('view-rules-btn').addEventListener('click', () => {
+    renderRulesScreen();
+    showScreen('screen-rules');
+  });
+  document.getElementById('rules-back-btn').addEventListener('click', () => showScreen('screen-main'));
 
   document.getElementById('wild-tile-btn').addEventListener('click', openWildTilePicker);
 
