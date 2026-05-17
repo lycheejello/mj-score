@@ -32,6 +32,7 @@
   <div class="wild-tile-bar">
     <span class="won-from-label">Wild tile 寶</span>
     <button id="wild-tile-btn" class="wild-tile-btn">—</button>
+    <span id="wild-count-badge" class="wild-count-badge" style="display:none">0 寶</span>
   </div>
 
   <!-- Meld Slots -->
@@ -67,31 +68,32 @@
     </div>
   </div>
 
-  <!-- Won From (required, always visible) -->
+  <!-- Self-draw + Dealer toggles (always visible) -->
   <div class="won-from-bar">
-    <span class="won-from-label">Winning tile from</span>
+    <span class="won-from-label">Self-draw 自摸?</span>
     <div class="won-from-btns">
-      <button class="won-from-btn" data-value="self">自摸</button>
-      <button class="won-from-btn" data-value="z1">東</button>
-      <button class="won-from-btn" data-value="z2">南</button>
-      <button class="won-from-btn" data-value="z3">西</button>
-      <button class="won-from-btn" data-value="z4">北</button>
+      <button class="won-from-btn" id="self-draw-btn" data-value="self">自摸</button>
+    </div>
+  </div>
+  <div class="won-from-bar dealer-bar">
+    <span class="won-from-label">Dealer 庄家?</span>
+    <div class="won-from-btns">
+      <button class="won-from-btn" id="dealer-btn">庄家</button>
+    </div>
+  </div>
+  <div class="dealer-substream" id="streak-row" style="display:none">
+    <span class="dealer-substream-label">↳ Consecutive wins 連一拉一</span>
+    <div class="streak-stepper">
+      <button type="button" class="streak-btn" id="streak-dec" aria-label="decrease">−</button>
+      <input type="number" id="cond-dealer-streak" class="streak-value" min="0" max="20" value="0">
+      <button type="button" class="streak-btn" id="streak-inc" aria-label="increase">+</button>
     </div>
   </div>
 
   <!-- Win Conditions (collapsible) -->
   <details class="conditions-details" id="conditions-details">
-    <summary>Win Conditions <span class="caret">▸</span></summary>
+    <summary>Special Wins <span class="caret">▸</span></summary>
     <div class="conditions-body">
-
-      <div class="condition-row">
-        <label>Dealer 庄家?</label>
-        <label class="toggle"><input type="checkbox" id="cond-dealer"><span class="toggle-slider"></span></label>
-      </div>
-      <div class="condition-row" id="streak-row" style="display:none">
-        <label>Consecutive dealer wins 連一拉一</label>
-        <input type="number" id="cond-dealer-streak" class="number-input" min="0" max="20" value="0">
-      </div>
 
       <div class="condition-row">
         <label>Win type 胡牌方式</label>
@@ -112,10 +114,6 @@
         </select>
       </div>
 
-      <div class="condition-row">
-        <label>Flowers 花 count</label>
-        <input type="number" id="cond-flowers" class="number-input" min="0" max="8" value="0">
-      </div>
       <div class="condition-row" id="flower-special-row" style="display:none">
         <label>Flower special 花特殊</label>
         <select id="cond-flower-special" class="select-input">
@@ -123,19 +121,6 @@
           <option value="flower_7steal">七搶一 — steal 7th flower (+40)</option>
           <option value="flower_8win">八花 — 7–8 flowers win (+40)</option>
         </select>
-      </div>
-
-      <div class="condition-row">
-        <label>Wildcards used 寶</label>
-        <input type="number" id="cond-wildcards" class="number-input" min="0" max="4" value="0">
-      </div>
-      <div class="condition-row" id="mo-bao-row" style="display:none">
-        <label>Win on wild draw 摸寶?</label>
-        <label class="toggle"><input type="checkbox" id="cond-mo-bao"><span class="toggle-slider"></span></label>
-      </div>
-      <div class="condition-row" id="bao-gui-wei-row" style="display:none">
-        <label>Wild as original tile 寶歸位?</label>
-        <label class="toggle"><input type="checkbox" id="cond-bao-gui-wei"><span class="toggle-slider"></span></label>
       </div>
 
       <div class="condition-row">
