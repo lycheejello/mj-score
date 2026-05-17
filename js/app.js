@@ -11,7 +11,7 @@ const state = {
     { tiles: [], type: 'pair',     concealed: true }  // index 5 = pair slot
   ],
 
-  selectedPaletteTile: null,  // tile id currently selected from palette
+  activeMeldIndex: null,      // index of the meld currently being filled (0-5), or null
   winningTile: null,          // 'meldIndex-tileIndex' of the winning tile
   selectedFlowers: new Set(), // flower tile ids currently toggled on
   wildTileId: null,           // which tile is the wildcard this game
@@ -300,6 +300,9 @@ async function init() {
   buildPalette();
   buildMeldSlots();
   bindEvents();
+  updatePaletteUI();
+  updateSelectionHint();
+  updateMeldDropTargets();
 }
 
 // ── Screen Navigation ─────────────────────────────────────────────────────────
@@ -381,19 +384,25 @@ function updateFlowerBadge() {
 }
 
 function onPaletteTileClick(tile) {
-  const used = getUsedCounts();
-  const remaining = 4 - (used[tile.id] || 0);
-  if (remaining <= 0) return;
+  if (state.activeMeldIndex === null) return;
+  const mi = state.activeMeldIndex;
+  if (isSlotFull(mi)) return;
 
-  // Toggle selection
-  if (state.selectedPaletteTile === tile.id) {
-    state.selectedPaletteTile = null;
-  } else {
-    state.selectedPaletteTile = tile.id;
-  }
+  const used = getUsedCounts();
+  if ((used[tile.id] || 0) >= 4) return;
+
+  state.melds[mi].tiles.push(tile.id);
+
+  // Deselect the meld once it's full (3-tile pungs stay active in case user wants to grow to kang)
+  if (isSlotFull(mi)) state.activeMeldIndex = null;
+
+  updateMeldType(mi);
+  renderMeldSlot(mi);
   updatePaletteUI();
   updateSelectionHint();
   updateMeldDropTargets();
+  updateWildcardCount();
+  updateLiveScore();
 }
 
 function updatePaletteUI() {
@@ -408,9 +417,12 @@ function updatePaletteUI() {
     const cnt = used[id] || 0;
     const remaining = 4 - cnt;
     btn.classList.toggle('depleted', remaining <= 0);
-    btn.classList.toggle('selected-palette', state.selectedPaletteTile === id);
     if (badge) badge.textContent = cnt > 0 ? `×${remaining}` : '';
   }
+
+  // Dim palette when no meld is active so the user knows to pick a slot first
+  document.querySelector('.palette-section')
+    .classList.toggle('no-active-meld', state.activeMeldIndex === null);
 
   // Update progress pill
   const total = getTotalTilesPlaced();
@@ -419,12 +431,12 @@ function updatePaletteUI() {
 
 function updateSelectionHint() {
   const hint = document.getElementById('selection-hint');
-  if (state.selectedPaletteTile) {
-    const tile = TILE_BY_ID[state.selectedPaletteTile];
-    hint.textContent = `${tile.face} ${tile.label} selected — tap a meld slot to place`;
+  if (state.activeMeldIndex !== null) {
+    const label = state.activeMeldIndex === 5 ? 'pair' : `meld ${state.activeMeldIndex + 1}`;
+    hint.textContent = `Filling ${label} — tap tiles below to add`;
     hint.classList.add('has-selection');
   } else {
-    hint.textContent = 'Tap a tile above, then tap a meld slot below to place it';
+    hint.textContent = 'Tap a meld slot above, then tap tiles below to fill it';
     hint.classList.remove('has-selection');
   }
 }
@@ -433,9 +445,8 @@ function updateMeldDropTargets() {
   for (let i = 0; i < 6; i++) {
     const slot = document.querySelector(`.meld-slot[data-meld-index="${i}"]`);
     if (!slot) continue;
-    const canDrop = state.selectedPaletteTile && !isSlotFull(i);
-    slot.classList.toggle('drop-ready', canDrop);
-    slot.classList.toggle('slot-full', isSlotFull(i) && !state.selectedPaletteTile);
+    slot.classList.toggle('active-meld', state.activeMeldIndex === i);
+    slot.classList.toggle('slot-full', isSlotFull(i));
   }
 }
 
@@ -448,7 +459,7 @@ function buildMeldSlots() {
   for (let i = 0; i < 6; i++) {
     const isPair = i === 5;
     const slot = document.createElement('div');
-    slot.className = `meld-slot${isPair ? ' pair-slot' : ''}`;
+    slot.className = 'meld-slot';
     slot.dataset.meldIndex = i;
 
     slot.innerHTML = `
@@ -484,24 +495,16 @@ function buildMeldSlots() {
 }
 
 function onMeldSlotClick(meldIndex) {
-  if (!state.selectedPaletteTile) return;
-  if (isSlotFull(meldIndex)) return;
-
-  state.melds[meldIndex].tiles.push(state.selectedPaletteTile);
-
-  // Deselect only if all 4 copies of this tile are now placed
-  const used = getUsedCounts();
-  if ((used[state.selectedPaletteTile] || 0) >= 4) {
-    state.selectedPaletteTile = null;
+  // Toggle off if tapping the already-active slot
+  if (state.activeMeldIndex === meldIndex) {
+    state.activeMeldIndex = null;
+  } else {
+    if (isSlotFull(meldIndex)) return;
+    state.activeMeldIndex = meldIndex;
   }
-
-  updateMeldType(meldIndex);
-  renderMeldSlot(meldIndex);
   updatePaletteUI();
   updateSelectionHint();
   updateMeldDropTargets();
-  updateWildcardCount();
-  updateLiveScore();
 }
 
 function renderMeldSlot(meldIndex) {
@@ -764,7 +767,7 @@ function loadPreset() {
   const preset = PRESETS[_presetIndex % PRESETS.length];
   _presetIndex++;
 
-  state.selectedPaletteTile = null;
+  state.activeMeldIndex = null;
   state.winningTile = preset.winningTile;
   state.selectedFlowers = new Set(preset.flowers);
   state.wildTileId = null;
@@ -916,7 +919,7 @@ function clearAll() {
     { tiles: [], type: 'sequence', concealed: true },
     { tiles: [], type: 'pair',     concealed: true }
   ];
-  state.selectedPaletteTile = null;
+  state.activeMeldIndex = null;
   state.winningTile = null;
   state.selectedFlowers = new Set();
   state.wildTileId = null;
@@ -1011,11 +1014,10 @@ function bindEvents() {
     showScreen('screen-main');
   });
 
-  // Deselect palette tile on backdrop tap
+  // Deselect active meld on backdrop tap
   document.getElementById('melds-grid').addEventListener('click', (e) => {
-    // If tap lands directly on grid (not a slot), deselect
     if (e.target.id === 'melds-grid') {
-      state.selectedPaletteTile = null;
+      state.activeMeldIndex = null;
       updatePaletteUI();
       updateSelectionHint();
       updateMeldDropTargets();

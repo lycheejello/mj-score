@@ -1,1 +1,1 @@
-const APP_VERSION = 'v14';
+const APP_VERSION = 'v18';

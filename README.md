@@ -16,9 +16,9 @@ Install as a PWA from Chrome/Safari for offline use and a home-screen icon.
 
 ## How to score a hand
 
-1. **Select tiles** from the palette at the top. Tap a tile to select it (gold highlight), then tap a meld slot to place it. The progress counter shows how many of the required 17 tiles have been placed.
+1. **Set the wild tile 寶** (optional) — if this game has a wild, tap the **Wild tile** button at the top and pick the face. 白 (z7) auto-resolves to the wild, and each placed wild gets a 寶→ button to mark what it stands in for.
 
-2. **Group melds** — the app auto-detects the meld type (順 sequence / 刻 pung / 槓 kang) from the tiles you place. Toggle 🙈/👁 on each meld to mark it concealed or exposed. A kang's 4th tile does not count toward the 17-tile total.
+2. **Fill the melds** — tap an empty meld slot to activate it (gold highlight), then tap tiles in the palette to fill it. Tap the same slot again, or the empty grid area, to deselect. The slot auto-deselects once it's full (3 tiles for sequence, 4 for kang, 2 for pair); a 3-tile pung stays active in case you want to grow it to a kang. The app auto-detects the meld type (順 sequence / 刻 pung / 槓 kang). Toggle 🙈/👁 on each meld to mark it concealed or exposed. A kang's 4th tile does not count toward the 17-tile total.
 
 3. **Mark the winning tile** — tap any placed tile to star it (★). This is required before calculating.
 
