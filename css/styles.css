@@ -91,7 +91,9 @@ header h1 {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  transition: opacity 0.15s;
 }
+.palette-section.no-active-meld { opacity: 0.55; }
 .palette-row {
   display: flex;
   align-items: center;
@@ -214,9 +216,11 @@ header h1 {
 .meld-slot.pair-slot {
   grid-column: span 2;
 }
-.meld-slot.drop-ready {
+.meld-slot.active-meld {
+  border-style: solid;
   border-color: var(--gold);
-  background: rgba(212,168,51,0.1);
+  background: rgba(212,168,51,0.15);
+  box-shadow: 0 0 0 2px var(--gold);
 }
 .meld-slot.slot-full {
   border-style: solid;
