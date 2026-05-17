@@ -356,8 +356,14 @@ const detectors = {
 
   // Special Hands
   wu_men_qi(hand) {
-    const suits = suitsInHand(hand);
-    return ['b','m','p','z'].every(s => suits.has(s));
+    // Winds (z1-z4) and dragons (z5-z7) are separate categories — both share suit 'z'
+    const ids = allTiles(hand);
+    const has = pred => ids.some(pred);
+    return has(id => suit(id) === 'b')
+        && has(id => suit(id) === 'm')
+        && has(id => suit(id) === 'p')
+        && has(id => suit(id) === 'z' && val(id) <= 4)
+        && has(id => suit(id) === 'z' && val(id) >= 5);
   },
 
   hun_yi_se(hand) {
@@ -436,9 +442,9 @@ function calculateScore(hand, rules) {
         dealer:          c.dealer,
         zi_mo:           c.wonFrom === 'self' && !c.menQing,
         men_qing_zi_mo:  c.wonFrom === 'self' && c.menQing,
-        yi_du:           c.winType === 'yi_du',
-        dui_peng:        c.winType === 'dui_peng',
-        du_du:           c.winType === 'du_du',
+        yi_du:           c.waitType === 'yi_du',
+        dui_peng:        c.waitType === 'dui_peng',
+        du_du:           c.waitType === 'du_du',
         qiang_gang:      c.winType === 'qiang_gang',
         gang_shang_gang: c.winType === 'gang_shang_gang',
         ban_qiu:         c.allFrontType === 'ban_qiu',
