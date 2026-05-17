@@ -195,6 +195,60 @@ function updateMeldType(meldIndex) {
   badge.dataset.valid = (detected !== null || meld.tiles.length < 3) ? '1' : '0';
 }
 
+// Derive the wait shape from the starred winning tile.
+// Returns 'yi_du', 'dui_peng', 'du_du', or 'normal'.
+// yi_du fires either when a wild substitutes inside a single-out wait (downgrades du_du)
+// or when the winning tile duplicates a tile placed elsewhere in the hand (multi-out long-chain case).
+function detectWaitType() {
+  if (!state.winningTile) return 'normal';
+  const [mi, ti] = state.winningTile.split('-').map(Number);
+  const meld = state.melds[mi];
+
+  const meldUsesWildSub = (m, idx) => {
+    const r = resolveWilds(m.tiles, idx);
+    return m.tiles.some((origId, i) => origId !== r[i]);
+  };
+
+  // Pair slot → single-out by definition
+  if (mi === 5) {
+    if (!meld || meld.tiles.length < 2) return 'normal';
+    return meldUsesWildSub(meld, 5) ? 'yi_du' : 'du_du';
+  }
+
+  if (!meld || meld.tiles.length < 3) return 'normal';
+  const resolved = resolveWilds(meld.tiles, mi);
+  const detected = detectMeldType(resolved);
+  if (!detected) return 'normal';
+
+  // Any pung-completion (incl. shanpon) → dui_peng. Wild presence doesn't change this.
+  if (detected === 'pung' || detected === 'kang') return 'dui_peng';
+
+  if (detected === 'sequence') {
+    const winVal = TILE_BY_ID[resolved[ti]]?.value;
+    const vals = resolved.map(id => TILE_BY_ID[id]?.value).sort((a, b) => a - b);
+    if (winVal == null || vals.length !== 3) return 'normal';
+
+    const isSingleOut =
+      (winVal === vals[1]) ||                       // kanchan (middle)
+      (winVal === 7 && vals[2] === 9) ||            // 789 penchan
+      (winVal === 3 && vals[0] === 1);              // 123 penchan
+    if (isSingleOut) {
+      return meldUsesWildSub(meld, mi) ? 'yi_du' : 'du_du';
+    }
+
+    // Multi-out (ryanmen): yi_du fires if winning tile id appears elsewhere in hand
+    const winResolvedId = resolved[ti];
+    for (let i = 0; i < state.melds.length; i++) {
+      if (i === mi) continue;
+      const otherResolved = resolveWilds(state.melds[i].tiles, i);
+      if (otherResolved.includes(winResolvedId)) return 'yi_du';
+    }
+    return 'normal';
+  }
+
+  return 'normal';
+}
+
 function maxForSlot(meldIndex) {
   if (meldIndex === 5) return 2;
   // A 3-tile pung can grow to a 4-tile kang; sequences cap at 3
@@ -655,7 +709,7 @@ function calculateAndShow() {
     })),
     pair: resolveWilds([...state.melds[5].tiles], 5),
     flowers: [],
-    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId }
+    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId, waitType: detectWaitType() }
   };
 
   const { total, rows } = calculateScore(hand, state.rules);
@@ -957,7 +1011,7 @@ function buildLiveHand() {
     })),
     pair: resolveWilds([...state.melds[5].tiles], 5),
     flowers: [],
-    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId }
+    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId, waitType: detectWaitType() }
   };
 }
 
