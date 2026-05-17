@@ -433,10 +433,10 @@ function updateSelectionHint() {
   const hint = document.getElementById('selection-hint');
   if (state.activeMeldIndex !== null) {
     const label = state.activeMeldIndex === 5 ? 'pair' : `meld ${state.activeMeldIndex + 1}`;
-    hint.textContent = `Filling ${label} — tap tiles above to add`;
+    hint.textContent = `Filling ${label} — tap tiles below to add`;
     hint.classList.add('has-selection');
   } else {
-    hint.textContent = 'Tap a meld slot below, then tap tiles above to fill it';
+    hint.textContent = 'Tap a meld slot above, then tap tiles below to fill it';
     hint.classList.remove('has-selection');
   }
 }
@@ -459,7 +459,7 @@ function buildMeldSlots() {
   for (let i = 0; i < 6; i++) {
     const isPair = i === 5;
     const slot = document.createElement('div');
-    slot.className = `meld-slot${isPair ? ' pair-slot' : ''}`;
+    slot.className = 'meld-slot';
     slot.dataset.meldIndex = i;
 
     slot.innerHTML = `
