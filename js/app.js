@@ -20,7 +20,7 @@ const state = {
   conditions: {
     dealer: false,
     dealerStreak: 0,
-    wonFrom: null,   // 'self' | 'z1' | 'z2' | 'z3' | 'z4'  (drives menQing + allFrontType)
+    wonFrom: 'other', // 'self' | 'other' — self-draw vs won from opponent's discard
     winType: 'normal',
     instantWin: 'none',
     wildcards: 0,
@@ -77,15 +77,41 @@ function clearMeldWildSubs(meldIndex) {
   }
 }
 
+// Detect 摸寶 — the winning tile itself is a wild (z7 or the chosen wild tile).
+function detectMoBao() {
+  if (!state.wildTileId || !state.winningTile) return false;
+  const [mi, ti] = state.winningTile.split('-').map(Number);
+  const id = state.melds[mi]?.tiles[ti];
+  return id === 'z7' || id === state.wildTileId;
+}
+
+// Detect 寶歸位 — wild tile placed and used as its own identity (no substitute set).
+// z7 always resolves to the wild tile, so any z7 counts too.
+function detectBaoGuiWei() {
+  if (!state.wildTileId) return false;
+  for (let mi = 0; mi < state.melds.length; mi++) {
+    const tiles = state.melds[mi].tiles;
+    for (let ti = 0; ti < tiles.length; ti++) {
+      if (tiles[ti] === 'z7') return true;
+      if (tiles[ti] === state.wildTileId && !state.wildcardSubs[`${mi}-${ti}`]) return true;
+    }
+  }
+  return false;
+}
+
 // Count wildcard tiles (z7 + wild tile) and sync to conditions panel
 function updateWildcardCount() {
   const count = state.wildTileId
     ? state.melds.reduce((n, m) => n + m.tiles.filter(id => id === state.wildTileId).length, 0)
     : 0;
   state.conditions.wildcards = count;
-  document.getElementById('cond-wildcards').value = count;
-  document.getElementById('mo-bao-row').style.display     = count > 0 ? '' : 'none';
-  document.getElementById('bao-gui-wei-row').style.display = count > 0 ? '' : 'none';
+  const badge = document.getElementById('wild-count-badge');
+  if (count > 0) {
+    badge.textContent = `${count} 寶`;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 // ── Wildcard Picker ───────────────────────────────────────────────────────────
@@ -420,7 +446,6 @@ function onFlowerClick(id, btn) {
   }
   const n = state.selectedFlowers.size;
   state.conditions.flowerCount = n;
-  document.getElementById('cond-flowers').value = n;
   updateFlowerBadge();
   document.getElementById('flower-special-row').style.display = n >= 6 ? '' : 'none';
   updateLiveScore();
@@ -660,14 +685,6 @@ function calculateAndShow() {
     alert('Tap a tile in your hand to mark the winning tile (★).');
     return;
   }
-  // Require won-from
-  if (!state.conditions.wonFrom) {
-    document.querySelector('.won-from-bar').classList.add('missing');
-    document.querySelector('.won-from-bar').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    alert('Select where the winning tile came from.');
-    return;
-  }
-
   // Validate pair slot has 2 tiles
   if (state.melds[5].tiles.length !== 2) {
     alert('The pair slot needs exactly 2 tiles.');
@@ -709,7 +726,7 @@ function calculateAndShow() {
     })),
     pair: resolveWilds([...state.melds[5].tiles], 5),
     flowers: [],
-    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId, waitType: detectWaitType() }
+    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId, moBao: detectMoBao(), baoGuiWei: detectBaoGuiWei(), waitType: detectWaitType() }
   };
 
   const { total, rows } = calculateScore(hand, state.rules);
@@ -796,7 +813,7 @@ const PRESETS = [
       { tiles: ['b5','b5'],      concealed: true  },   // pair of 5 → pair_258
     ],
     winningTile: '5-1',   // second b5 in pair
-    wonFrom: 'z2',
+    wonFrom: 'other',
     flowers: [],
   },
   {
@@ -846,10 +863,7 @@ function loadPreset() {
     }
   }
 
-  document.querySelectorAll('.won-from-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.value === preset.wonFrom)
-  );
-  document.querySelector('.won-from-bar').classList.remove('missing');
+  document.getElementById('self-draw-btn').classList.toggle('active', preset.wonFrom === 'self');
   renderWildTileBtn();
   updateWildcardCount();
 
@@ -859,7 +873,6 @@ function loadPreset() {
     if (btn) btn.classList.add('selected-palette');
   });
   updateFlowerBadge();
-  document.getElementById('cond-flowers').value = preset.flowers.length;
   document.getElementById('flower-special-row').style.display = preset.flowers.length >= 6 ? '' : 'none';
 
   updatePaletteUI();
@@ -978,11 +991,14 @@ function clearAll() {
   state.selectedFlowers = new Set();
   state.wildTileId = null;
   state.wildcardSubs = {};
-  state.conditions.wonFrom = null;
-  document.querySelectorAll('.won-from-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('.won-from-bar').classList.remove('missing');
+  state.conditions.wonFrom = 'other';
+  document.getElementById('self-draw-btn').classList.remove('active');
+  state.conditions.dealer = false;
+  state.conditions.dealerStreak = 0;
+  document.getElementById('dealer-btn').classList.remove('active');
+  document.getElementById('cond-dealer-streak').value = 0;
+  document.getElementById('streak-row').style.display = 'none';
   state.conditions.flowerCount = 0;
-  document.getElementById('cond-flowers').value = 0;
   renderFlowerPalette();
   updateFlowerBadge();
   document.getElementById('flower-special-row').style.display = 'none';
@@ -1011,7 +1027,7 @@ function buildLiveHand() {
     })),
     pair: resolveWilds([...state.melds[5].tiles], 5),
     flowers: [],
-    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId, waitType: detectWaitType() }
+    conditions: { ...c, menQing, allFrontType, hasWildTile: !!state.wildTileId, moBao: detectMoBao(), baoGuiWei: detectBaoGuiWei(), waitType: detectWaitType() }
   };
 }
 
@@ -1079,25 +1095,32 @@ function bindEvents() {
   });
 
   // Win conditions
-  document.getElementById('cond-dealer').addEventListener('change', (e) => {
-    state.conditions.dealer = e.target.checked;
-    document.getElementById('streak-row').style.display = e.target.checked ? '' : 'none';
+  document.getElementById('dealer-btn').addEventListener('click', () => {
+    const next = !state.conditions.dealer;
+    state.conditions.dealer = next;
+    document.getElementById('dealer-btn').classList.toggle('active', next);
+    document.getElementById('streak-row').style.display = next ? '' : 'none';
+    if (!next) {
+      state.conditions.dealerStreak = 0;
+      document.getElementById('cond-dealer-streak').value = 0;
+    }
     updateLiveScore();
   });
-  document.getElementById('cond-dealer-streak').addEventListener('input', (e) => {
-    state.conditions.dealerStreak = Number(e.target.value) || 0;
+  const streakInput = document.getElementById('cond-dealer-streak');
+  const setStreak = (n) => {
+    const clamped = Math.max(0, Math.min(20, n));
+    state.conditions.dealerStreak = clamped;
+    streakInput.value = clamped;
     updateLiveScore();
-  });
-  document.querySelectorAll('.won-from-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const val = btn.dataset.value;
-      state.conditions.wonFrom = (state.conditions.wonFrom === val) ? null : val;
-      document.querySelectorAll('.won-from-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.value === state.conditions.wonFrom)
-      );
-      document.querySelector('.won-from-bar').classList.remove('missing');
-      updateLiveScore();
-    });
+  };
+  streakInput.addEventListener('input', (e) => setStreak(Number(e.target.value) || 0));
+  document.getElementById('streak-dec').addEventListener('click', () => setStreak(state.conditions.dealerStreak - 1));
+  document.getElementById('streak-inc').addEventListener('click', () => setStreak(state.conditions.dealerStreak + 1));
+  document.getElementById('self-draw-btn').addEventListener('click', () => {
+    const isSelf = state.conditions.wonFrom === 'self';
+    state.conditions.wonFrom = isSelf ? 'other' : 'self';
+    document.getElementById('self-draw-btn').classList.toggle('active', !isSelf);
+    updateLiveScore();
   });
   document.getElementById('cond-win-type').addEventListener('change', (e) => {
     state.conditions.winType = e.target.value;
@@ -1107,30 +1130,8 @@ function bindEvents() {
     state.conditions.instantWin = e.target.value;
     updateLiveScore();
   });
-  document.getElementById('cond-flowers').addEventListener('input', (e) => {
-    const n = Number(e.target.value) || 0;
-    state.conditions.flowerCount = n;
-    updateFlowerBadge();
-    document.getElementById('flower-special-row').style.display = n >= 6 ? '' : 'none';
-    updateLiveScore();
-  });
   document.getElementById('cond-flower-special').addEventListener('change', (e) => {
     state.conditions.flowerSpecial = e.target.value;
-    updateLiveScore();
-  });
-  document.getElementById('cond-wildcards').addEventListener('input', (e) => {
-    const n = Number(e.target.value) || 0;
-    state.conditions.wildcards = n;
-    document.getElementById('mo-bao-row').style.display     = n > 0 ? '' : 'none';
-    document.getElementById('bao-gui-wei-row').style.display = n > 0 ? '' : 'none';
-    updateLiveScore();
-  });
-  document.getElementById('cond-mo-bao').addEventListener('change', (e) => {
-    state.conditions.moBao = e.target.checked;
-    updateLiveScore();
-  });
-  document.getElementById('cond-bao-gui-wei').addEventListener('change', (e) => {
-    state.conditions.baoGuiWei = e.target.checked;
     updateLiveScore();
   });
   document.getElementById('cond-ni-gu').addEventListener('change', (e) => {
